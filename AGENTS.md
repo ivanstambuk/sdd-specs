@@ -69,6 +69,7 @@ The goal for any AI agent working here is to:
 - Keep terminology consistent across files (refer to `docs/style-guide.md`).
 - Prefer short, declarative sentences in `spec.md`.
 - Use YAML keys and field names that align with existing templates and schemas.
+- Treat visual prompts (for example entries under `visuals/prompts.md`) as canonical text: when the human supplies a prompt and asks to integrate it elsewhere, copy it verbatim (including wording, line breaks, and field keys) without rephrasing, deduplicating, or restructuring into shared “primers” or additional markup unless explicitly instructed otherwise.
 
 ## Clarification Gate and Open Questions
 
