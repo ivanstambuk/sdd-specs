@@ -1,0 +1,10 @@
+# Template for profiles index.
+# List all spec-local or shared profiles here.
+
+profiles:
+  - profile_id: "sdd.<domain>.<area>.<name>.<language>.<variant>"
+    spec: "sdd.<domain>.<area>.<name>@0.1.0"
+    path: "specs/<category>/<project-or-domain>/<spec-directory>/profiles/<profile-file>.yaml"
+    language: "PLACEHOLDER_LANGUAGE"
+    status: "<draft|stable|deprecated>"
+

@@ -1,0 +1,221 @@
+ConformanceBundle:
+  id: "TurboSHAKE-KT-KT256-HopMAC-RFC9861-profile-conformance"
+  version: "1.0.0"
+  schema_version: 1
+  profile_bundle_id: "TurboSHAKE-KT-KT256-HopMAC-RFC9861-profile"
+  description: "Conformance and test-vector bundle for the TurboSHAKE / KangarooTwelve / HopMAC profile aligned with RFC 9861."
+
+---
+# Extracted test-suite index from the ProfileSchema
+ExternalTestSuites:
+  - id: RFC9861-TurboSHAKE
+    scope: ["TurboSHAKE128", "TurboSHAKE256"]
+    source_spec: RFC9861
+    section: "§5 Test Vectors (TurboSHAKE)"
+    references: ["FR-018", "FR-019", "FR-020"]
+  - id: RFC9861-KangarooTwelve
+    scope: ["KT128", "KT256"]
+    source_spec: RFC9861
+    section: "§5 Test Vectors (KangarooTwelve)"
+    references: ["FR-021", "FR-022"]
+
+---
+# Extracted test-vector family index from the ProfileSchema
+ExternalTestVectors:
+  description: "Machine-readable index of RFC 9861 TurboSHAKE and KangarooTwelve test-vector families; these entries describe input patterns and parameter sets but defer to RFC 9861 for the canonical hex outputs."
+  vectors:
+    - id: RFC9861-TurboSHAKE128-Empty
+      primitive: TurboSHAKE128
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        M_pattern: "zeros"
+        M_len: 0
+        D: 0x1F
+        L: 32
+    - id: RFC9861-TurboSHAKE128-Empty-Long
+      primitive: TurboSHAKE128
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        M_pattern: "zeros"
+        M_len: 0
+        D: 0x1F
+        L: 10032
+        output_slice:
+          kind: "last"
+          bytes: 32
+    - id: RFC9861-TurboSHAKE128-ptn
+      primitive: TurboSHAKE128
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        M_pattern: "ptn"
+        n_values: ["17**0", "17**1", "17**2", "17**3", "17**4", "17**5", "17**6"]
+        D: 0x1F
+        L: 32
+    - id: RFC9861-TurboSHAKE128-FF-D-Cases
+      primitive: TurboSHAKE128
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        cases:
+          - { M_hex: "FF", D: 0x30, L: 32 }
+          - { M_hex: "FFFFFF", D: 0x7F, L: 32 }
+    - id: RFC9861-TurboSHAKE256-Empty
+      primitive: TurboSHAKE256
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        M_pattern: "zeros"
+        M_len: 0
+        D: 0x1F
+        L: 64
+    - id: RFC9861-TurboSHAKE256-Empty-Long
+      primitive: TurboSHAKE256
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        M_pattern: "zeros"
+        M_len: 0
+        D: 0x1F
+        L: 10032
+        output_slice:
+          kind: "last"
+          bytes: 32
+    - id: RFC9861-TurboSHAKE256-ptn
+      primitive: TurboSHAKE256
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        M_pattern: "ptn"
+        n_values: ["17**0", "17**1", "17**2", "17**3", "17**4", "17**5", "17**6"]
+        D: 0x1F
+        L: 64
+    - id: RFC9861-TurboSHAKE256-FF-D-Cases
+      primitive: TurboSHAKE256
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        cases:
+          - { M_hex: "FFFFFF", D: 0x01, L: 64 }
+          - { M_hex: "FF", D: 0x06, L: 64 }
+          - { M_hex: "FFFFFF", D: 0x07, L: 64 }
+          - { M_hex: "FFFFFFFFFFFFFF", D: 0x0B, L: 64 }
+          - { M_hex: "FF", D: 0x30, L: 64 }
+          - { M_hex: "FFFFFF", D: 0x7F, L: 64 }
+    - id: RFC9861-KT128-Empty
+      primitive: KT128
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        M_pattern: "zeros"
+        M_len: 0
+        C_pattern: "zeros"
+        C_len: 0
+        L_values: [32, 64, 10032]
+    - id: RFC9861-KT128-ptn-M
+      primitive: KT128
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        M_pattern: "ptn"
+        M_n_values: [1, "17", "17**2", "17**3", "17**4", "17**5", "17**6"]
+        C_pattern: "zeros"
+        C_len: 0
+        L: 32
+    - id: RFC9861-KT128-ptn-C
+      primitive: KT128
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        M_pattern: "zeros"
+        M_len: 0
+        C_pattern: "ptn"
+        C_n_values: [1, "41", "41**2", "41**3"]
+        L: 32
+    - id: RFC9861-KT128-ptn-MC-8192
+      primitive: KT128
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        M_pattern: "ptn"
+        M_len: 8192
+        C_pattern: "ptn"
+        C_len_values: [0, 8189, 8190]
+        L: 32
+    - id: RFC9861-KT256-Empty
+      primitive: KT256
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        M_pattern: "zeros"
+        M_len: 0
+        C_pattern: "zeros"
+        C_len: 0
+        L_values: [64, 128, 10064]
+    - id: RFC9861-KT256-ptn-M
+      primitive: KT256
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        M_pattern: "ptn"
+        M_n_values: [1, "17", "17**2", "17**3", "17**4", "17**5"]
+        C_pattern: "zeros"
+        C_len: 0
+        L: 64
+    - id: RFC9861-KT256-ptn-C
+      primitive: KT256
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        M_pattern: "zeros"
+        M_len: 0
+        C_pattern: "ptn"
+        C_n_values: [1, "41", "41**2", "41**3"]
+        L: 64
+    - id: RFC9861-KT256-ptn-MC-8192
+      primitive: KT256
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        M_pattern: "ptn"
+        M_len: 8192
+        C_pattern: "ptn"
+        C_len_values: [0, 8189, 8190]
+        L: 64
+
+---
+# Local HopMAC canonical test vectors in machine-readable form
+LocalHopMACTestVectors:
+  - id: HopMAC128-Local-Canonical
+    primitive: HopMAC128
+    key:
+      kind: pattern
+      pattern: "ptn"
+      length: 16
+    message:
+      kind: pattern
+      pattern: "ptn"
+      length: 32
+    customization:
+      kind: utf8
+      value: "HopMAC128 local test"
+    L: 32
+    expected_tag_hex: "62BAAD516C2A3B392532F8E7BEED74328BCD0782409DB7EEB772315E83DE4051"
+  - id: HopMAC256-Local-Canonical
+    primitive: HopMAC256
+    key:
+      kind: pattern
+      pattern: "ptn"
+      length: 32
+    message:
+      kind: pattern
+      pattern: "ptn"
+      length: 64
+    customization:
+      kind: utf8
+      value: "HopMAC256 local test"
+    L: 64
+    expected_tag_hex: "8F561D5DE2AB767AD46E958714CF15CF998953EFAF5748A1DA5B2BE91E085B49BBA39E2323F1B7AAB6A9834DAB7DB87D017AFDE6BCCC A05763BF9BADF1FBB856"
+

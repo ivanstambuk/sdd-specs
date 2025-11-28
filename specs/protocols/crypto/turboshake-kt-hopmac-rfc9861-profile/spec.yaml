@@ -1,0 +1,34 @@
+id: "sdd.crypto.xof.turboshake-kt-hopmac-rfc9861-profile"
+kind: "library-api"
+title: "TurboSHAKE / KangarooTwelve / HopMAC RFC 9861 Profile"
+version: "1.0.0"
+status: "draft"
+
+domain: "crypto"
+owner: "Ivan"
+visibility: "public"
+
+origin:
+  type: "rfc"
+  refs:
+    - "https://datatracker.ietf.org/doc/rfc9861/"
+    - "https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf"
+  notes: >
+    Profile of RFC 9861 TurboSHAKE, KangarooTwelve, and HopMAC primitives for
+    AI/LLM-generated and human-written implementations, aligned with the
+    ProfileSchema bundle in profile-core.yaml.
+
+lifecycle:
+  created: "2025-11-27"
+  last_updated: "2025-11-27"
+  replaces: []
+  superseded_by: []
+
+dependencies:
+  requires: []
+  optional: []
+
+normative_bundles:
+  profile_schema: "./profile-core.yaml"
+  conformance: "./conformance.yaml"
+

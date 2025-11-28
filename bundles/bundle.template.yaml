@@ -1,0 +1,27 @@
+# Template for a bundle (composition of specs + profiles).
+# Copy this file and replace all placeholder values for a new bundle.
+
+id: "bundle.<product-or-domain>.<name>"
+title: "PLACEHOLDER_BUNDLE_TITLE"
+status: "<draft|active|retired>"
+
+includes:
+  specs:
+    - "sdd.<domain>.<area>.<spec-name>@<version-range>"
+  bundles:
+    - "bundle.<product-or-domain>.<other-bundle-id>"
+
+profiles:
+  - "sdd.<domain>.<area>.<spec-name>.<language>.<variant>"
+
+constraints:
+  language: "PLACEHOLDER_PRIMARY_LANGUAGE"
+  min_security_strength_bits: 0
+  required_status: "<idea|draft|review|stable|deprecated|superseded>"
+
+non_functional:
+  performance:
+    target_latency_ms_p95: 0
+  availability:
+    sloa: "PLACEHOLDER_SLOA"
+

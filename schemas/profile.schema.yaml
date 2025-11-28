@@ -1,0 +1,33 @@
+$id: https://example.org/schemas/profile.schema.json
+$schema: https://json-schema.org/draft/2020-12/schema
+title: SDD Profile
+type: object
+required:
+  - spec
+  - profile_id
+  - title
+  - status
+  - target
+properties:
+  spec:
+    type: string
+  profile_id:
+    type: string
+  title:
+    type: string
+  status:
+    type: string
+    enum:
+      - draft
+      - stable
+      - deprecated
+  target:
+    type: object
+    required:
+      - language
+    properties:
+      language:
+        type: string
+    additionalProperties: true
+additionalProperties: true
+

@@ -1,0 +1,12 @@
+# Template for specs index.
+# List all spec units in this repository here.
+
+specs:
+  - id: "sdd.<domain>.<area>.<name>"
+    version: "0.1.0"
+    path: "specs/<category>/<project-or-domain>/<spec-directory>"
+    status: "<idea|draft|review|stable|deprecated|superseded>"
+    domain: "PLACEHOLDER_DOMAIN"
+    origin: "<first-party|rfc|fido2|other-standard>"
+    tags: ["PLACEHOLDER_TAG_1", "PLACEHOLDER_TAG_2"]
+

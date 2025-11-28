@@ -1,0 +1,113 @@
+$id: https://example.org/schemas/profile-core.schema.json
+$schema: https://json-schema.org/draft/2020-12/schema
+title: ProfileSchema Bundle (profile-core.yaml)
+description: >
+  Minimal structural schema for ProfileSchema bundles such as
+  specs/protocols/crypto/turboshake-kt-hopmac-rfc9861-profile/profile-core.yaml.
+  This schema is intentionally permissive: it fixes the expected top-level
+  sections and some key object shapes but allows additional properties so that
+  profile-specific structure can evolve without changing the schema on each
+  edit.
+type: object
+properties:
+  ProfileBundle:
+    type: object
+    required: [id, version, schema_version]
+    properties:
+      id:
+        type: string
+      version:
+        type: string
+      schema_version:
+        type: integer
+      description:
+        type: string
+      files:
+        type: array
+        items:
+          type: string
+    additionalProperties: true
+  AgentCoreView:
+    type: object
+    properties:
+      primitives:
+        type: array
+        items:
+          type: object
+      helpers:
+        type: array
+        items:
+          type: object
+    additionalProperties: true
+  SpecIndex:
+    type: object
+    properties:
+      primitives:
+        type: array
+        items:
+          type: object
+      helpers:
+        type: array
+        items:
+          type: object
+    additionalProperties: true
+  ExternalSpecs:
+    type: array
+    items:
+      type: object
+  ExternalTestSuites:
+    type: array
+    items:
+      type: object
+  ExternalTestVectors:
+    type: object
+    properties:
+      description:
+        type: string
+      vectors:
+        type: array
+        items:
+          type: object
+    additionalProperties: true
+  TypesAndNotation:
+    type: object
+    additionalProperties: true
+  HostMapping:
+    type: object
+    additionalProperties: true
+  Constraints:
+    type: object
+    additionalProperties: true
+  ErrorModel:
+    type: object
+    additionalProperties: true
+  FR:
+    type: array
+    items:
+      type: object
+  NFR:
+    type: array
+    items:
+      type: object
+  ProfileSchemaMeta:
+    type: object
+    additionalProperties: true
+  ProfileSchemaInvariants:
+    type: object
+    additionalProperties: true
+  ProfileSchemaInvariantsRole:
+    type: object
+    additionalProperties: true
+  IdTypes:
+    type: object
+    additionalProperties: true
+  ConformanceCriteria:
+    type: array
+    items:
+      type: object
+  ImplementationChecklist:
+    type: array
+    items:
+      type: object
+additionalProperties: true
+

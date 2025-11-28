@@ -1,0 +1,14 @@
+metadata:
+  spec: "sdd.<domain>.<area>.<name>@0.1.0"
+  description: "Illustrative test vectors for PLACEHOLDER_TITLE."
+
+vectors:
+  - id: "placeholder-vector-1"
+    description: "PLACEHOLDER_DESCRIPTION"
+    params:
+      PLACEHOLDER_PARAMETER_NAME: "PLACEHOLDER_PARAMETER_VALUE"
+    inputs:
+      PLACEHOLDER_INPUT_NAME: "PLACEHOLDER_INPUT_VALUE"
+    outputs:
+      PLACEHOLDER_OUTPUT_NAME: "PLACEHOLDER_OUTPUT_VALUE"
+

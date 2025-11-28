@@ -1,0 +1,34 @@
+$id: https://example.org/schemas/bundle.schema.json
+$schema: https://json-schema.org/draft/2020-12/schema
+title: SDD Bundle
+type: object
+required:
+  - id
+  - title
+  - status
+  - includes
+properties:
+  id:
+    type: string
+  title:
+    type: string
+  status:
+    type: string
+    enum:
+      - draft
+      - active
+      - retired
+  includes:
+    type: object
+    properties:
+      specs:
+        type: array
+        items:
+          type: string
+      bundles:
+        type: array
+        items:
+          type: string
+    additionalProperties: false
+additionalProperties: true
+

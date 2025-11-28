@@ -1,0 +1,40 @@
+$id: https://example.org/schemas/spec.schema.json
+$schema: https://json-schema.org/draft/2020-12/schema
+title: SDD Spec
+type: object
+required:
+  - id
+  - kind
+  - title
+  - version
+  - status
+properties:
+  id:
+    type: string
+    pattern: "^sdd\\.[a-z0-9_.-]+$"
+  kind:
+    type: string
+    enum:
+      - protocol
+      - feature
+      - component
+      - journey
+      - library-api
+      - idea
+  title:
+    type: string
+    minLength: 1
+  version:
+    type: string
+    minLength: 1
+  status:
+    type: string
+    enum:
+      - idea
+      - draft
+      - review
+      - stable
+      - deprecated
+      - superseded
+additionalProperties: true
+

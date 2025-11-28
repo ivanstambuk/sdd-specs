@@ -1,0 +1,135 @@
+# Template for a spec-local implementation target.
+# Copy and rename this file under `targets/` (or an equivalent directory under
+# a concrete spec unit) for each language/stack you want to target.
+#
+# Everything in this file is OPTIONAL; delete what you don’t need. Keep it
+# concise and implementation-neutral. Actual build scripts, source code, or
+# packaging configs belong in downstream implementation repositories.
+
+spec: "sdd.<domain>.<area>.<name>@0.1.0"
+
+target_id: "sdd.<domain>.<area>.<name>.<language>.<variant>"
+title: "PLACEHOLDER_TARGET_TITLE"
+status: "<draft|stable|deprecated>"
+
+# High-level target characteristics
+target:
+  language: "PLACEHOLDER_LANGUAGE"          # e.g., java, rust, csharp, python, javascript, go, cpp, swift, kotlin
+  language_version: "PLACEHOLDER_LANGUAGE_VERSION"
+  platform: "PLACEHOLDER_PLATFORM"          # e.g., linux, windows, macos, ios, android, wasm
+  runtime: "PLACEHOLDER_RUNTIME"            # e.g., jvm, node, .net, native, browser
+  framework:
+    name: "PLACEHOLDER_FRAMEWORK_NAME"      # e.g., spring, .net-asp, react, qt
+    version: "PLACEHOLDER_FRAMEWORK_VERSION"
+  libraries:
+    - name: "PLACEHOLDER_LIBRARY_NAME"
+      version: "PLACEHOLDER_LIBRARY_VERSION"
+  os:
+    - "linux"
+    - "windows"
+  arch:
+    - "x86_64"
+    - "arm64"
+
+# Packaging / distribution (optional)
+artifact:
+  kind: "<jar|exe|wheel|crate|npm|docker-image|static-lib|shared-lib|nuget|msi|apk|ipa|wasm|zip>"
+  name: "placeholder-artifact-name"
+  coordinates: "group:artifact:version"     # e.g., Maven GAV, npm name, crate name
+  versioning_scheme: "<semver|calver|rev|other>"
+
+# Build tooling (optional)
+build:
+  system: "<maven|gradle|bazel|cmake|cargo|npm|pip|make|msbuild|poetry|go|just|ninja>"
+  min_version: "PLACEHOLDER_BUILD_TOOL_MIN_VERSION"
+  profiles: ["release", "debug"]
+
+# Module / package layout (optional)
+module_layout:
+  package: "com.example.placeholder"
+  class_prefix: "Placeholder"
+  file_structure: "PLACEHOLDER_FILE_STRUCTURE"
+  module_path: "example.org/placeholder/module"
+
+# Type and API mappings (optional)
+type_mappings:
+  PLACEHOLDER_ABSTRACT_TYPE_1: "PLACEHOLDER_CONCRETE_TYPE_1"
+  PLACEHOLDER_ABSTRACT_TYPE_2: "PLACEHOLDER_CONCRETE_TYPE_2"
+
+api_surface:
+  namespace: "PLACEHOLDER_API_NAMESPACE"
+  visibility: "<public|internal>"
+  naming_conventions: "PLACEHOLDER_NAMING_NOTES"
+
+serialization:
+  formats: ["json"]
+  endianness: "<little|big|host>"
+  notes:
+    - "PLACEHOLDER_SERIALIZATION_NOTE"
+
+# Error mapping (optional)
+error_mapping:
+  style: "<exceptions|error-returns|result-type>"
+  hierarchy:
+    - name: "PlaceholderError"
+      extends: "BaseError"
+  sentinel_errors:
+    - "ErrPlaceholder"
+
+# Configuration toggles (optional)
+config_toggles:
+  placeholder_toggle_boolean: false
+  placeholder_toggle_string: "PLACEHOLDER_TOGGLE_VALUE"
+
+# Testing & quality (optional)
+testing:
+  frameworks:
+    - "PLACEHOLDER_TEST_FRAMEWORK"
+  coverage:
+    min_pct: 0
+    target_pct: 0
+  fuzzing: false
+  property_tests: false
+  benchmarks: false
+  fixtures:
+    - "examples/vectors.yaml"
+
+# Implementation guidance (optional, advisory)
+implementation_guidance:
+  code_style: "PLACEHOLDER_CODE_STYLE"
+  lints:
+    - "PLACEHOLDER_LINT_TOOL"
+  formatters:
+    - "PLACEHOLDER_FORMATTER"
+  thread_safety: "PLACEHOLDER_THREAD_SAFETY"
+
+# Security & deployment (optional)
+security:
+  crypto_backend: "PLACEHOLDER_BACKEND"
+  entropy: "PLACEHOLDER_ENTROPY_SOURCE"
+  secrets_handling: "PLACEHOLDER_SECRETS_POLICY"
+
+deployment:
+  container_base: "PLACEHOLDER_CONTAINER_BASE"
+  signing: "PLACEHOLDER_CODE_SIGNING"
+  supply_chain:
+    sbom: "PLACEHOLDER_SBOM_FORMAT"
+    provenance: "PLACEHOLDER_PROVENANCE_FORMAT"
+  license: "PLACEHOLDER_LICENSE_CONSTRAINTS"
+
+# Tooling and generation hints (optional)
+tooling_hints:
+  templates:
+    class_template: "templates/<language>/placeholder-class.mustache"
+    test_template: "templates/<language>/placeholder-test.mustache"
+  scripts:
+    build: "scripts/build_placeholder.sh"
+    test: "scripts/test_placeholder.sh"
+    lint: "scripts/lint_placeholder.sh"
+
+# Free-form notes or extensions (optional)
+mapping_notes:
+  - "PLACEHOLDER_MAPPING_NOTE"
+
+custom: {}
+

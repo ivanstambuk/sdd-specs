@@ -1,0 +1,1034 @@
+ProfileBundle:
+  id: "TurboSHAKE-KT-KT256-HopMAC-RFC9861-profile"
+  version: "1.0.0"
+  schema_version: 1
+  description: "Canonical ProfileSchema bundle for the TurboSHAKE / KangarooTwelve / HopMAC profile aligned with RFC 9861."
+
+---
+AgentCoreView:
+  primitives:
+    - name: KP
+      behavior_from:
+        - API.KP
+        - ErrorModel.ResultType
+        - ErrorModel.ErrorCategory
+        - ErrorModel.ErrorCategoryTags
+        - ErrorModel.ResultSemantics
+    - name: TurboSHAKE128
+      behavior_from:
+        - Constraints.TurboSHAKE.M_length
+        - Constraints.TurboSHAKE.D
+        - Constraints.TurboSHAKE.L
+        - API.TurboSHAKE128
+        - ALG.TurboSHAKE.OneShot
+        - ErrorModel.ResultType
+        - ErrorModel.ErrorCategory
+        - ErrorModel.ErrorCategoryTags
+        - ErrorModel.ResultSemantics
+    - name: TurboSHAKE256
+      behavior_from:
+        - Constraints.TurboSHAKE.M_length
+        - Constraints.TurboSHAKE.D
+        - Constraints.TurboSHAKE.L
+        - API.TurboSHAKE256
+        - ALG.TurboSHAKE.OneShot
+        - ErrorModel.ResultType
+        - ErrorModel.ErrorCategory
+        - ErrorModel.ErrorCategoryTags
+        - ErrorModel.ResultSemantics
+    - name: TurboSHAKEContext
+      behavior_from:
+        - Constraints.TurboSHAKE.M_length
+        - Constraints.TurboSHAKE.D
+        - Constraints.TurboSHAKE.L
+        - Constraints.Streaming.squeeze_len
+        - API.TurboSHAKEContext
+        - ErrorModel.ResultType
+        - ErrorModel.ErrorCategory
+        - ErrorModel.ErrorCategoryTags
+        - ErrorModel.ResultSemantics
+        - ErrorModel.ContextLifetime
+        - ErrorModel.ContextIndependence
+    - name: KT128
+      behavior_from:
+        - Constraints.KangarooTwelve.M_length
+        - Constraints.KangarooTwelve.C_length
+        - Constraints.KangarooTwelve.length_encode_domain
+        - API.KT128
+        - ALG.KT128
+        - ALG.length_encode
+        - ErrorModel.ResultType
+        - ErrorModel.ErrorCategory
+        - ErrorModel.ErrorCategoryTags
+        - ErrorModel.ResultSemantics
+    - name: KT256
+      behavior_from:
+        - Constraints.KangarooTwelve.M_length
+        - Constraints.KangarooTwelve.C_length
+        - Constraints.KangarooTwelve.length_encode_domain
+        - API.KT256
+        - ALG.KT256
+        - ALG.length_encode
+        - ErrorModel.ResultType
+        - ErrorModel.ErrorCategory
+        - ErrorModel.ErrorCategoryTags
+        - ErrorModel.ResultSemantics
+    - name: HopMAC128
+      behavior_from:
+        - Constraints.HopMAC.Key_length
+        - Constraints.HopMAC.L_HopMAC128
+        - Constraints.KangarooTwelve.M_length
+        - Constraints.KangarooTwelve.C_length
+        - API.HopMAC128
+        - ALG.HopMAC128
+        - ALG.KT128
+        - ErrorModel.ResultType
+        - ErrorModel.ErrorCategory
+        - ErrorModel.ErrorCategoryTags
+        - ErrorModel.ResultSemantics
+    - name: HopMAC256
+      behavior_from:
+        - Constraints.HopMAC.Key_length
+        - Constraints.HopMAC.L_HopMAC256
+        - Constraints.KangarooTwelve.M_length
+        - Constraints.KangarooTwelve.C_length
+        - API.HopMAC256
+        - ALG.HopMAC256
+        - ALG.KT256
+        - ErrorModel.ResultType
+        - ErrorModel.ErrorCategory
+        - ErrorModel.ErrorCategoryTags
+        - ErrorModel.ResultSemantics
+  helpers:
+    - name: length_encode
+      behavior_from:
+        - Constraints.KangarooTwelve.length_encode_domain
+        - ALG.length_encode
+        - ErrorModel.ResultType
+        - ErrorModel.ErrorCategory
+        - ErrorModel.ErrorCategoryTags
+        - ErrorModel.ResultSemantics
+---
+SpecIndex:
+  primitives:
+    - name: KP
+      category: permutation
+      section: "Keccak-p[1600,12] Primitive"
+      api_contract_id: API.KP
+      algorithm_ids: []
+    - name: TurboSHAKE128
+      category: xof
+      section: "TurboSHAKE128 and TurboSHAKE256"
+      api_contract_id: API.TurboSHAKE128
+      algorithm_ids: ["ALG.TurboSHAKE.OneShot"]
+    - name: TurboSHAKE256
+      category: xof
+      section: "TurboSHAKE128 and TurboSHAKE256"
+      api_contract_id: API.TurboSHAKE256
+      algorithm_ids: ["ALG.TurboSHAKE.OneShot"]  # shared algorithm with different rate/capacity
+    - name: TurboSHAKEContext
+      category: xof-context
+      section: "TurboSHAKE128 and TurboSHAKE256 – Streaming / Incremental API"
+      api_contract_id: API.TurboSHAKEContext
+      algorithm_ids: []
+    - name: KT128
+      category: xof
+      section: "KangarooTwelve (KT128 and KT256)"
+      api_contract_id: API.KT128
+      algorithm_ids: ["ALG.KT128"]
+    - name: KT256
+      category: xof
+      section: "KangarooTwelve (KT128 and KT256)"
+      api_contract_id: API.KT256
+      algorithm_ids: ["ALG.KT256"]
+    - name: HopMAC128
+      category: mac
+      section: "HopMAC128 and HopMAC256"
+      api_contract_id: API.HopMAC128
+      algorithm_ids: ["ALG.HopMAC128"]
+    - name: HopMAC256
+      category: mac
+      section: "HopMAC128 and HopMAC256"
+      api_contract_id: API.HopMAC256
+      algorithm_ids: ["ALG.HopMAC256"]
+  helpers:
+    - name: length_encode
+      section: "KangarooTwelve (KT128 and KT256) – length_encode(x) Algorithm"
+      api_contract_id: ALG.length_encode
+      algorithm_ids: ["ALG.length_encode"]
+ExternalSpecs:
+  - id: RFC9861
+    title: "RFC 9861 - KangarooTwelve and TurboSHAKE"
+    url: "https://datatracker.ietf.org/doc/rfc9861/"
+    role: "Primary RFC defining TurboSHAKE, KangarooTwelve, and test vectors that this profile refines and constrains."
+  - id: FIPS202
+    title: "FIPS 202 - SHA-3 Standard: Permutation-Based Hash and Extendable-Output Functions"
+    url: "https://nvlpubs.nist.gov/nistpubs/FIPS/NIST.FIPS.202.pdf"
+    role: "Source of truth for the Keccak-f[1600] permutation; KP in this profile is its 12-round restriction Keccak-p[1600,12]."
+  - id: KeccakTS
+    title: "Keccak team – TurboSHAKE technical details"
+    url: "https://keccak.team/turboshake.html"
+    role: "Informational technical details about TurboSHAKE usage and design from the Keccak team."
+  - id: KeccakRFC9861
+    title: "Keccak team – RFC 9861 commentary"
+    url: "https://keccak.team/2025/rfc9861.html"
+    role: "Informational commentary and additional background on RFC 9861 from the Keccak team."
+  - id: K12Draft
+    title: "draft-irtf-cfrg-kangarootwelve-10"
+    url: "https://datatracker.ietf.org/doc/draft-irtf-cfrg-kangarootwelve/10/"
+    role: "Historical IRTF draft for KangarooTwelve; referenced for background and consistency with RFC 9861."
+ExternalTestSuites:
+  - id: RFC9861-TurboSHAKE
+    scope: ["TurboSHAKE128", "TurboSHAKE256"]
+    source_spec: RFC9861
+    section: "§5 Test Vectors (TurboSHAKE)"
+    references: ["FR-018", "FR-019", "FR-020"]
+  - id: RFC9861-KangarooTwelve
+    scope: ["KT128", "KT256"]
+    source_spec: RFC9861
+    section: "§5 Test Vectors (KangarooTwelve)"
+    references: ["FR-021", "FR-022"]
+ExternalTestVectors:
+  description: "Machine-readable index of RFC 9861 TurboSHAKE and KangarooTwelve test-vector families; these entries describe input patterns and parameter sets but defer to RFC 9861 for the canonical hex outputs."
+  vectors:
+    - id: RFC9861-TurboSHAKE128-Empty
+      primitive: TurboSHAKE128
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        M_pattern: "zeros"
+        M_len: 0
+        D: 0x1F
+        L: 32
+    - id: RFC9861-TurboSHAKE128-Empty-Long
+      primitive: TurboSHAKE128
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        M_pattern: "zeros"
+        M_len: 0
+        D: 0x1F
+        L: 10032
+        output_slice:
+          kind: "last"
+          bytes: 32
+    - id: RFC9861-TurboSHAKE128-ptn
+      primitive: TurboSHAKE128
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        M_pattern: "ptn"
+        n_values: ["17**0", "17**1", "17**2", "17**3", "17**4", "17**5", "17**6"]
+        D: 0x1F
+        L: 32
+    - id: RFC9861-TurboSHAKE128-FF-D-Cases
+      primitive: TurboSHAKE128
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        cases:
+          - { M_hex: "FF", D: 0x30, L: 32 }
+          - { M_hex: "FFFFFF", D: 0x7F, L: 32 }
+    - id: RFC9861-TurboSHAKE256-Empty
+      primitive: TurboSHAKE256
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        M_pattern: "zeros"
+        M_len: 0
+        D: 0x1F
+        L: 64
+    - id: RFC9861-TurboSHAKE256-Empty-Long
+      primitive: TurboSHAKE256
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        M_pattern: "zeros"
+        M_len: 0
+        D: 0x1F
+        L: 10032
+        output_slice:
+          kind: "last"
+          bytes: 32
+    - id: RFC9861-TurboSHAKE256-ptn
+      primitive: TurboSHAKE256
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        M_pattern: "ptn"
+        n_values: ["17**0", "17**1", "17**2", "17**3", "17**4", "17**5", "17**6"]
+        D: 0x1F
+        L: 64
+    - id: RFC9861-TurboSHAKE256-FF-D-Cases
+      primitive: TurboSHAKE256
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        cases:
+          - { M_hex: "FFFFFF", D: 0x01, L: 64 }
+          - { M_hex: "FF", D: 0x06, L: 64 }
+          - { M_hex: "FFFFFF", D: 0x07, L: 64 }
+          - { M_hex: "FFFFFFFFFFFFFF", D: 0x0B, L: 64 }
+          - { M_hex: "FF", D: 0x30, L: 64 }
+          - { M_hex: "FFFFFF", D: 0x7F, L: 64 }
+    - id: RFC9861-KT128-Empty
+      primitive: KT128
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        M_pattern: "zeros"
+        M_len: 0
+        C_pattern: "zeros"
+        C_len: 0
+        L_values: [32, 64, 10032]
+    - id: RFC9861-KT128-ptn-M
+      primitive: KT128
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        M_pattern: "ptn"
+        M_n_values: [1, "17", "17**2", "17**3", "17**4", "17**5", "17**6"]
+        C_pattern: "zeros"
+        C_len: 0
+        L: 32
+    - id: RFC9861-KT128-ptn-C
+      primitive: KT128
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        M_pattern: "zeros"
+        M_len: 0
+        C_pattern: "ptn"
+        C_n_values: [1, "41", "41**2", "41**3"]
+        L: 32
+    - id: RFC9861-KT128-ptn-MC-8192
+      primitive: KT128
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        M_pattern: "ptn"
+        M_len: 8192
+        C_pattern: "ptn"
+        C_len_values: [0, 8189, 8190]
+        L: 32
+    - id: RFC9861-KT256-Empty
+      primitive: KT256
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        M_pattern: "zeros"
+        M_len: 0
+        C_pattern: "zeros"
+        C_len: 0
+        L_values: [64, 128, 10064]
+    - id: RFC9861-KT256-ptn-M
+      primitive: KT256
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        M_pattern: "ptn"
+        M_n_values: [1, "17", "17**2", "17**3", "17**4", "17**5"]
+        C_pattern: "zeros"
+        C_len: 0
+        L: 64
+    - id: RFC9861-KT256-ptn-C
+      primitive: KT256
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        M_pattern: "zeros"
+        M_len: 0
+        C_pattern: "ptn"
+        C_n_values: [1, "41", "41**2", "41**3"]
+        L: 64
+    - id: RFC9861-KT256-ptn-MC-8192
+      primitive: KT256
+      source_spec: RFC9861
+      section: "§5"
+      parameters:
+        M_pattern: "ptn"
+        M_len: 8192
+        C_pattern: "ptn"
+        C_len_values: [0, 8189, 8190]
+        L: 64
+ProfileSchemaMeta:
+  ConstraintEntry:
+    required_fields: ["id", "description", "applies_to", "type", "min", "max", "error_category"]
+    metadata_fields: ["fr", "max_expr", "notes"]
+  ApiContract:
+    required_fields: ["id", "name", "category", "inputs", "output"]
+    metadata_fields: ["errors", "notes"]
+  AlgorithmSpec:
+    required_fields: ["id", "algorithm", "name", "inputs", "output"]
+    metadata_fields: ["references", "notes"]
+ProfileSchemaInvariants:
+  primitives_have_known_names:
+    description: "SpecIndex primitive/helper names must be globally unique."
+    rules:
+      - "Every SpecIndex.primitives[*].name and helpers[*].name is unique."
+  externalsuites_scope_is_known:
+    description: "ExternalTestSuites only refer to known primitives."
+    rules:
+      - "Every ExternalTestSuites[*].scope[*] is a SpecIndex.primitives[*].name."
+  canonical_ids_unique:
+    description: "Canonical behavioral elements must have globally unique IDs."
+    rules:
+      - "Every id field in Constraints entries, API Contract YAML blocks, Algorithm YAML blocks, and Error Model/Context* blocks is unique across the entire ProfileSchema."
+  fr_refs_are_canonical:
+    description: "FR/NFR rows only reference canonical behavioral sources or external standards."
+    rules:
+      - "Every Functional/Non-Functional Requirement 'Normative reference(s)' entry refers only to canonical behavioral sources defined in the ProfileSchema (Constraints, API Contracts, algorithms, Error Model/Context* blocks, whether referenced by section title or by id) and/or to external standards (e.g., RFC 9861, FIPS 202) listed in ExternalSpecs, and not to PB1–PB8, ImplementationChecklist, or other non-normative commentary."
+  agentcoreview_refs_exist:
+    description: "AgentCoreView behavior_from entries refer only to known canonical IDs."
+    rules:
+      - "Every AgentCoreView.primitives[*].behavior_from[*] and helpers[*].behavior_from[*] value that is not an external standard ID is equal to the id of some Constraints entry, API Contract YAML block, Algorithm YAML block, or Error Model/Context* block."
+  specindex_ids_exist:
+    description: "SpecIndex api_contract_id and algorithm_ids refer only to known canonical IDs."
+    rules:
+      - "Every SpecIndex.primitives[*].api_contract_id is equal to the id of some API Contract YAML block."
+      - "Every SpecIndex.primitives[*].algorithm_ids[*] is equal to the id of some Algorithm YAML block."
+
+ProfileSchemaInvariantsRole:
+  description: >
+    These invariants describe self-consistency properties of this profile document
+    (the ProfileSchema YAML and its indices/metadata blocks such as SpecIndex,
+    ExternalSpecs, ExternalTestSuites, ProfileSchemaInvariants, and IdTypes), not
+    behavior of any cryptographic primitive. They are normative for spec maintainers
+    and for tools/agents that claim schema-level conformance when using this profile
+    as a source of truth for code generation or conformance checking: any such system
+    that parses the ProfileSchema and distributes or treats a given copy as canonical
+    MUST evaluate these invariants at least once on that specific specification artifact
+    before treating it as structurally valid for code generation or conformance claims.
+    If any invariant fails it MUST treat the profile as invalid (for example, by stopping
+    or escalating to a supervising system) instead of silently proceeding with code
+    generation or conformance claims. This invariant-checking requirement is captured
+    in ConformanceCriteria CC-4 and applies to the specification artifact, not to
+    cryptographic library behavior. Library implementations that only claim behavioral
+    profile conformance are not required to evaluate these invariants themselves; they
+    MAY rely on a ProfileSchema artifact that has already passed the invariants (for
+    example, an official release or CI-validated copy), though library authors SHOULD
+    prefer consuming such validated artifacts. A standalone LLM agent that cannot
+    directly execute these checks MUST avoid asserting that a given copy of this profile
+    is structurally valid and SHOULD explicitly treat invariant checking as an external
+    responsibility; it SHOULD at least avoid proceeding when it detects obvious structural
+    inconsistencies (for example, unknown primitive/helper names in SpecIndex or
+    ExternalTestSuites).
+
+IdTypes:
+  FRId:
+    pattern: "^FR-[0-9]{3}$"
+  NFRId:
+    pattern: "^NFR-[0-9]{3}$"
+  PrimitiveName:
+    pattern: "^[A-Za-z0-9_]+$"
+---
+TypesAndNotation:
+  ByteString:
+    description: "Ordered sequence of bytes (octets) each in [0,255]."
+    operations:
+      length: "|s| denotes the length of s in bytes."
+      concat: "a || b denotes concatenation of a followed by b."
+      slice:
+        zero_based: true
+        forms:
+          - "s[n:m] is the slice from index n (inclusive) to m (exclusive)."
+          - "s[n:] is the slice from index n to the end."
+  ZeroFill:
+    notation: "00^b"
+    meaning: "Byte string of length b filled with 0x00."
+  Integers:
+    domain: "Unless stated otherwise, integers are mathematical and non-negative."
+    length_counters:
+      type: "UInt64 conceptual"
+      constraint: "All profile-mandated lengths and counters MUST be supported for values 0 ≤ n ≤ 2^64 − 1 using a conceptual 64-bit unsigned integer model. RFC 9861’s bound x < 256^255 for length_encode(x) and related constructions is reflected in max_expr fields (for example on Constraints.KangarooTwelve.length_encode_domain) as a broader conceptual domain defined by the RFC, but this profile’s normative domain stops at 2^64 − 1. Behavior for conceptual inputs or outputs beyond 2^64 − 1 bytes is outside this profile’s scope and conformance guarantees and MUST NOT be relied on for protocol-level interoperability."
+    semantics:
+      - "When a constraint entry provides both max (numeric) and max_expr (symbolic) fields, max is the minimum guaranteed bound that conformant implementations MUST support; max_expr describes a conceptual or RFC-level domain that MUST include all values 0 ≤ n ≤ max (for example, an RFC bound such as x < 256^255). Implementations MAY support values beyond max when consistent with max_expr, but such behavior is treated as an extension and is outside this profile’s conformance guarantees."
+  byte_x:
+    notation: "byte(x)"
+    description: "Single byte whose numeric value equals the integer x, with 0 ≤ x ≤ 255."
+    note: "Other integers in this spec are not implicitly serialized as bytes; the only explicit integer encodings are byte(x) and length_encode(x)."
+  InterfacePreconditions:
+    description: "Interface parameter constraints are hard preconditions on all primitives."
+    examples:
+      - "Bounds on D, L, |M|, |C|, and key lengths."
+    semantics:
+      - "Algorithm pseudocode may restate these preconditions for clarity."
+      - "Any input violating the interface constraints MUST fail with a deterministic ParameterError as defined in the Error Model."
+HostMapping:
+  description: "Language-agnostic mapping requirements from conceptual types and errors to host-language representations; this section constrains properties that any host mapping MUST satisfy at the level of observable behavior but does not prescribe internal data structures or language-specific APIs."
+  IntegerTypes:
+    rules:
+      - "For every conceptual integer parameter or length governed by a Constraints entry, implementations MUST either (a) use a host integer type that can represent all values allowed by that Constraints entry, or (b) enforce the corresponding constraint before converting into a narrower host type."
+      - "Silent truncation, wrapping, or sign-changing of conceptual integer values that satisfy this profile’s constraints is non-conformant."
+  ByteStringType:
+    rules:
+      - "ByteString MUST provide a canonical view as a sequence of 8-bit bytes (octets) with deterministic indexing semantics for all operations defined in this profile; internal representation MAY be fragmented or rope-like as long as this canonical 8-bit view is well defined and consistently used."
+  BitString1600Type:
+    rules:
+      - "BitString[1600] used for the KP state MUST have observable behavior (for example, bytes at the API boundary and test-vector outputs) that matches FIPS 202 Keccak-f[1600] lane ordering and byte-to-lane mapping exactly. Internal layouts (for example, vectorized lanes, transposed representations) are unconstrained as long as they are provably equivalent and still produce identical bytes for all FR-covered behaviors and test vectors."
+  ErrorCategories:
+    rules:
+      - "Whatever error mechanism the host language uses (exceptions, tagged unions, error codes, etc.), any implementation that claims conformance to this profile MUST provide at least one machine-readable mechanism (which MAY be a dedicated conformance or diagnostics interface) that allows a test harness to classify each failure covered by the FR/NFR tables into the conceptual ErrorCategory values := { ParameterError, StateError, InternalError } defined in the Error Model."
+      - "When a host API can naturally distinguish parameter/validation failures from state-usage errors and internal/unexpected faults, implementations SHOULD expose a machine-readable identifier (for example, drawn from {\"parameter\",\"state\",\"internal\"}, the canonical tags in ErrorCategoryTags) that reflects the conceptual ErrorCategory. This identifier MAY be provided via a separate conformance- or diagnostics-oriented interface rather than the primary public API."
+      - "Different conceptual categories MAY be merged into a single host-visible error kind when the host API cannot naturally distinguish them (for example, when all failures use a single error-code type), provided that (a) parameter/validation failures are not silently treated as success, and (b) any conformance harness that needs finer-grained classification either uses an implementation-provided mapping or a dedicated test-harness API."
+  ContextsAndThreading:
+    rules:
+      - "Streaming/contextful APIs (for example, TurboSHAKEContext or any KT/HopMAC contexts a host chooses to add) MUST map to concrete types that can satisfy NFR-005: independent, reentrant contexts with clearly documented thread-safety guarantees."
+      - "Host implementations MUST ensure that observable behavior for each context satisfies the independence and determinism requirements in the Error Model and NFR-001/NFR-005. Internal sharing of state or resources is permitted only if it cannot change or couple the observable outputs or error behavior of distinct contexts beyond what is explicitly defined by this profile."
+---
+Constraints:
+  TurboSHAKE:
+    M_length:
+      id: Constraints.TurboSHAKE.M_length
+      description: "Conceptual total TurboSHAKE message length bounds (one-shot |M| and the sum of all absorbed bytes in streaming)."
+      applies_to: ["TurboSHAKE128", "TurboSHAKE256"]
+      type: UInt64
+      min: 0
+      max: 18446744073709551615
+      max_expr: "Normative support range for this profile: 0 ≤ |M| ≤ 2^64 − 1 bytes. RFC 9861’s wider conceptual domain MAY be implemented, but any behavior for |M| > 2^64 − 1 bytes is outside this profile’s scope and conformance guarantees."
+      error_category: ParameterError
+      fr: ["FR-005"]
+    D:
+      id: Constraints.TurboSHAKE.D
+      description: "TurboSHAKE domain-separation byte and reservation policy."
+      applies_to: ["TurboSHAKE128", "TurboSHAKE256"]
+      type: UInt8
+      min: 1
+      max: 127
+      default: 31        # 0x1F
+      reserved_when_kt_present: ["0x06", "0x07", "0x0B"]
+      error_category: ParameterError
+      fr: ["FR-003"]
+    L:
+      id: Constraints.TurboSHAKE.L
+      description: "TurboSHAKE output length bounds."
+      applies_to: ["TurboSHAKE128", "TurboSHAKE256"]
+      type: UInt64
+      min: 1
+      max: 18446744073709551615
+      max_expr: "Normative support range for this profile: 1 ≤ L ≤ 2^64 − 1 bytes. RFC 9861’s wider conceptual domain MAY be implemented, but any behavior for L > 2^64 − 1 bytes is outside this profile’s scope and conformance guarantees."
+      error_category: ParameterError
+      fr: ["FR-004"]
+  KangarooTwelve:
+    M_length:
+      id: Constraints.KangarooTwelve.M_length
+      description: "Conceptual KT message length bounds."
+      applies_to: ["KT128", "KT256"]
+      type: UInt64
+      min: 0
+      max: 18446744073709551615
+      max_expr: "Normative support range for this profile: 0 ≤ |M| ≤ 2^64 − 1 bytes. RFC 9861’s wider conceptual domain MAY be implemented, but any behavior for |M| > 2^64 − 1 bytes is outside this profile’s scope and conformance guarantees."
+      error_category: ParameterError
+      fr: ["FR-011"]
+    C_length:
+      id: Constraints.KangarooTwelve.C_length
+      description: "Conceptual KT customization length bounds."
+      applies_to: ["KT128", "KT256"]
+      type: UInt64
+      min: 0
+      max: 18446744073709551615
+      max_expr: "Normative support range for this profile: 0 ≤ |C| ≤ 2^64 − 1 bytes. RFC 9861’s wider conceptual domain MAY be implemented, but any behavior for |C| > 2^64 − 1 bytes is outside this profile’s scope and conformance guarantees."
+      error_category: ParameterError
+      fr: ["FR-010"]
+    length_encode_domain:
+      id: Constraints.KangarooTwelve.length_encode_domain
+      description: "Domain of x for length_encode(x)."
+      applies_to: ["KT128", "KT256"]
+      type: Integer
+      min: 0
+      max: 18446744073709551615
+      max_expr: "RFC 9861 conceptual domain: 0 ≤ x < 256^255. This profile’s normative domain for length_encode(x) is 0 ≤ x ≤ 2^64 − 1; behavior for x > 2^64 − 1 is outside this profile’s scope and conformance guarantees."
+      error_category: ParameterError
+      fr: ["FR-009", "FR-010"]
+  HopMAC:
+    Key_length:
+      id: Constraints.HopMAC.Key_length
+      description: "HopMAC key length bounds."
+      applies_to: ["HopMAC128", "HopMAC256"]
+      type: UInt64
+      min: 1
+      max: 18446744073709551615
+      max_expr: "Normative support range for this profile: 1 ≤ |Key| ≤ 2^64 − 1 bytes. Behavior for |Key| > 2^64 − 1 bytes is outside this profile’s scope and conformance guarantees."
+      error_category: ParameterError
+      fr: ["FR-015", "FR-016"]
+      notes:
+        - "Keys of length ≤ 69 bytes enjoy the single-permutation SCA advantage described in the HopMAC Security Notes and RFC 9861; longer keys remain allowed but lose that specific advantage."
+    L_HopMAC128:
+      id: Constraints.HopMAC.L_HopMAC128
+      description: "HopMAC128 tag length bounds."
+      applies_to: ["HopMAC128"]
+      type: UInt64
+      min: 16
+      max: 18446744073709551615
+      max_expr: "Normative support range for this profile: 16 ≤ L ≤ 2^64 − 1 bytes. Behavior for L > 2^64 − 1 bytes is outside this profile’s scope and conformance guarantees."
+      error_category: ParameterError
+      fr: ["FR-015", "FR-017"]
+    L_HopMAC256:
+      id: Constraints.HopMAC.L_HopMAC256
+      description: "HopMAC256 tag length bounds."
+      applies_to: ["HopMAC256"]
+      type: UInt64
+      min: 32
+      max: 18446744073709551615
+      max_expr: "Normative support range for this profile: 32 ≤ L ≤ 2^64 − 1 bytes. Behavior for L > 2^64 − 1 bytes is outside this profile’s scope and conformance guarantees."
+      error_category: ParameterError
+      fr: ["FR-016", "FR-017"]
+  Streaming:
+    squeeze_len:
+      id: Constraints.Streaming.squeeze_len
+      description: "Length parameter for a single TurboSHAKEContext.squeeze call; FR-008 defines the guarantees for sequences of squeeze calls whose total output length lies within the conceptual bound Constraints.TurboSHAKE.L.max."
+      applies_to: ["TurboSHAKEContext"]
+      type: UInt64
+      min: 0
+      max: 18446744073709551615
+      max_expr: "Normative support range for this profile: 0 ≤ len ≤ 2^64 − 1 bytes per squeeze call (aligned with Constraints.TurboSHAKE.L.max). Behavior for len > 2^64 − 1 bytes in a single call is outside this profile’s scope and conformance guarantees."
+      error_category: ParameterError
+      fr: ["FR-008"]
+---
+ResultType:
+  id: ErrorModel.ResultType
+  description: "Conceptual result type returned by all operations"
+  variants:
+    - name: Ok
+      payload: "operation-specific output value (or void for some streaming methods)"
+    - name: Err
+      payload: "reason describing the failure; must map to an observable ErrorCategory"
+
+ErrorCategory:
+  id: ErrorModel.ErrorCategory
+  - name: ParameterError
+    meaning: "Invalid inputs (e.g., out-of-range D, L = 0, lengths above an advertised maximum, x to length_encode outside its domain)."
+  - name: StateError
+    meaning: "Invalid API usage (e.g., calling squeeze before finalize, using a context after it has been disposed by the host API, calling methods in a disallowed phase)."
+  - name: InternalError
+      meaning: "Unexpected failures not caused by caller-visible parameters or state (e.g., resource exhaustion, internal invariants violated)."
+
+ErrorCategoryTags:
+  id: ErrorModel.ErrorCategoryTags
+  description: "Canonical machine-readable tags for ErrorCategory values."
+  tags:
+    ParameterError: "parameter"
+    StateError: "state"
+    InternalError: "internal"
+
+ResultSemantics:
+  id: ErrorModel.ResultSemantics
+  deterministic: true
+  explicit_errors: true
+  notes:
+    - "For the same inputs and state, the implementation MUST always produce the same observable ErrorCategory."
+    - "On Err(reason), the operation MUST NOT append any new bytes to the caller’s output for that call."
+    - "Implementations MUST NOT rely on undefined behavior in the host language to signal errors."
+ContextLifetime:
+  id: ErrorModel.ContextLifetime
+  applies_to: ["TurboSHAKEContext", "any additional KT/HopMAC contexts"]
+  rules:
+    - "Any context that has produced an InternalError for an operation covered by this profile MUST be treated as unusable for further cryptographic operations under this profile. APIs built on this profile MUST either dispose of such contexts or, if they allow further method calls on them, ensure those calls immediately fail without producing new bytes or changing observable state."
+
+ContextIndependence:
+  id: ErrorModel.ContextIndependence
+  applies_to: ["TurboSHAKEContext", "any additional KT/HopMAC contexts"]
+  rules:
+    - "No shared mutable state between contexts except through explicit inputs/outputs."
+    - "Distinct context instances MUST be safe to use concurrently from different threads (thread-compatible use). The thread-safety model for calls on the same context (single-threaded-only, thread-compatible, or fully thread-safe) MUST be documented explicitly; in the absence of such guarantees, callers MUST assume that the same context is single-threaded-only."
+    - "Context methods MUST NOT read or mutate hidden global state that affects outputs or error behavior."
+  failure_examples:
+    - primitive: "TurboSHAKE128"
+      scenario: "Invalid domain byte D"
+      input:
+        M: "empty"
+        D: 0
+        L: 32
+      expected_result:
+        category: "ParameterError"
+        output: "no bytes produced"
+    - primitive: "TurboSHAKEContext.squeeze"
+      scenario: "Squeeze called before finalize"
+      state:
+        phase: "INIT"
+      input:
+        len: 16
+      expected_result:
+        category: "StateError"
+        output: "no bytes produced"
+---
+id: API.KP
+name: KP
+category: permutation
+inputs:
+  - name: state
+    type: BitString[1600]
+    constraints: "exactly 1600 bits, interpreted as a 5×5 array of 64-bit lanes as in FIPS 202"
+output:
+  name: state_prime
+  type: BitString[1600]
+  constraints: "exactly 1600 bits; KP is bijective: each input state has a unique output and vice versa"
+errors: []
+properties:
+  - "Deterministic and side-effect free"
+  - "Implements Keccak-p[1600, n_r = 12] exactly as Keccak-f[1600] from FIPS 202 restricted to 12 rounds"
+---
+id: API.TurboSHAKE128
+name: TurboSHAKE128
+category: xof
+inputs:
+  - name: M
+    type: ByteString
+    constraints_ref: "TurboSHAKE.M_length"
+  - name: D
+    type: UInt8
+    constraints_ref: "TurboSHAKE.D"
+    default: 31   # 0x1F, see Constraints.TurboSHAKE.D
+  - name: L
+    type: UInt64
+    constraints_ref: "TurboSHAKE.L"
+output:
+  name: out
+  type: ByteString
+  constraints: "|out| = L"
+errors:
+  - category: ParameterError
+    when: "Any violation of the referenced interface constraints for M, D, or L (see Constraints.TurboSHAKE.*)."
+parameters:
+  rate: 168        # bytes
+  capacity: 32     # bytes (256 bits)
+---
+id: API.TurboSHAKE256
+name: TurboSHAKE256
+category: xof
+inputs:
+  - name: M
+    type: ByteString
+    constraints_ref: "TurboSHAKE.M_length"
+  - name: D
+    type: UInt8
+    constraints_ref: "TurboSHAKE.D"
+    default: 31   # 0x1F, see Constraints.TurboSHAKE.D
+  - name: L
+    type: UInt64
+    constraints_ref: "TurboSHAKE.L"
+output:
+  name: out
+  type: ByteString
+  constraints: "|out| = L"
+errors:
+  - category: ParameterError
+    when: "Any violation of the referenced interface constraints for M, D, or L (see Constraints.TurboSHAKE.*)."
+parameters:
+  rate: 136        # bytes
+  capacity: 64     # bytes (512 bits)
+---
+algorithm:
+  id: ALG.TurboSHAKE.OneShot
+  name: TurboSHAKE.OneShot
+  inputs: [M, D, L]
+  output: out
+  references: ["FR-002", "FR-003", "FR-004", "FR-006", "FR-007"]
+---
+id: API.TurboSHAKEContext
+name: TurboSHAKEContext
+category: xof-context
+state:
+  - name: S
+    type: ByteString[200]
+    description: "Internal 1600-bit sponge state"
+  - name: D
+    type: UInt8
+    description: "Domain-separation byte, fixed at init"
+  - name: buffer
+    type: ByteString
+    description: "Partial block buffer of length < rate"
+  - name: phase
+    type: Enum
+    values: [INIT, ABSORBING, SQUEEZING]
+methods:
+  - name: init
+    allowed_phase: ["INIT", "ABSORBING", "SQUEEZING"]
+    inputs:
+      - name: D
+        type: UInt8
+        constraints_ref: "TurboSHAKE.D"
+    output:
+      name: result
+      type: OkOrErr
+    errors:
+      - category: ParameterError
+        when: "Any violation of the referenced interface constraint for D (see Constraints.TurboSHAKE.D)."
+    effects:
+      - "Sets S to all-zero state"
+      - "Sets buffer to empty"
+      - "Stores D"
+      - "Sets phase to INIT"
+    notes:
+      - "Calling init(D) in any phase before the context has produced an InternalError re-initializes the context: it sets S to all-zero, clears buffer, stores the new D, and sets phase to INIT, discarding any previous state or outputs. After a context has produced an InternalError, it is unusable for further cryptographic operations under this profile (see ErrorModel.ContextLifetime); init(D) MUST NOT be used to revive such a context."
+  - name: absorb
+    inputs:
+      - name: chunk
+        type: ByteString
+        constraints_ref: "TurboSHAKE.M_length"
+    output:
+      name: result
+      type: OkOrErr
+    allowed_phase: ["INIT", "ABSORBING"]
+    errors:
+      - category: StateError
+        when: "phase ∉ {INIT, ABSORBING}"
+    notes:
+      - "Empty chunks are allowed; they may advance phase from INIT to ABSORBING but do not change the logical message."
+      - "Implementations MUST ensure that, after all absorb calls and finalize, the effect is equivalent to processing M || byte(D) with the one-shot TurboSHAKE padding."
+      - "Implementations MUST conceptually track the total number of bytes absorbed across all successful absorb(chunk) calls on a context; if adding |chunk| bytes would cause the total conceptual message length to exceed Constraints.TurboSHAKE.M_length.max, absorb(chunk) MUST fail with a deterministic ParameterError and MUST NOT absorb any part of chunk."
+  - name: finalize
+    inputs: []
+    output:
+      name: result
+      type: OkOrErr
+    allowed_phase: ["INIT", "ABSORBING"]
+    errors:
+      - category: StateError
+        when: "phase ∉ {INIT, ABSORBING}"
+    notes:
+      - "Appends byte(D) to the logical message (which may be empty), applies padding and absorb as in the one-shot algorithm, and sets phase to SQUEEZING."
+      - "Calling finalize with no prior absorb calls is equivalent to a one-shot call with M = \"\"."
+  - name: squeeze
+    inputs:
+      - name: len
+        type: UInt64
+        constraints_ref: "Streaming.squeeze_len"
+    output:
+      name: out
+      type: ByteString
+      constraints: "|out| = len"
+    allowed_phase: ["SQUEEZING"]
+    errors:
+      - category: StateError
+        when: "phase ≠ SQUEEZING"
+      - category: ParameterError
+        when: "Any violation of the referenced interface constraint for len (see Constraints.Streaming.squeeze_len)."
+    notes:
+      - "Produces len bytes of output, continuing from the current sponge state."
+      - "Multiple calls to squeeze MUST collectively satisfy the XOF prefix property relative to the corresponding one-shot call."
+  - name: reset
+    inputs: []
+    output:
+      name: result
+      type: OkOrErr
+    allowed_phase: ["SQUEEZING"]
+    errors:
+      - category: StateError
+        when: "phase ≠ SQUEEZING"
+    notes:
+      - "Optional helper to wipe S, buffer, and any secret-dependent state and set phase back to INIT; implementations MAY provide a separate free/dispose operation instead."
+      - "reset is only defined for contexts that have not produced an InternalError; contexts that have returned InternalError for any operation MUST be disposed of instead of being reset or reused."
+---
+id: API.KT128
+name: KT128
+category: xof
+inputs:
+  - name: M
+    type: ByteString
+    constraints_ref: "KangarooTwelve.M_length"
+  - name: C
+    type: ByteString
+    constraints_ref: "KangarooTwelve.C_length"
+  - name: L
+    type: UInt64
+    constraints_ref: "TurboSHAKE.L"
+output:
+  name: out
+  type: ByteString
+  constraints: "|out| = L"
+errors:
+  - category: ParameterError
+    when: "Any violation of the referenced interface constraints for M, C, or L, or any use of length_encode(x) that would violate the length_encode domain (see Constraints.KangarooTwelve.*)."
+notes:
+  - "Uses TurboSHAKE128 internally with D = 0x07, 0x06, or 0x0B as specified in the KT128 algorithm."
+---
+id: API.KT256
+name: KT256
+category: xof
+inputs:
+  - name: M
+    type: ByteString
+    constraints_ref: "KangarooTwelve.M_length"
+  - name: C
+    type: ByteString
+    constraints_ref: "KangarooTwelve.C_length"
+  - name: L
+    type: UInt64
+    constraints_ref: "TurboSHAKE.L"
+output:
+  name: out
+  type: ByteString
+  constraints: "|out| = L"
+errors:
+  - category: ParameterError
+    when: "Any violation of the referenced interface constraints for M, C, or L, or any use of length_encode(x) that would violate the length_encode domain (see Constraints.KangarooTwelve.*)."
+notes:
+  - "Uses TurboSHAKE256 internally with D = 0x07, 0x06, or 0x0B as specified in the KT256 algorithm."
+---
+algorithm:
+  id: ALG.length_encode
+  name: length_encode
+  inputs: [x]
+  output: S
+  references: ["FR-009", "FR-010"]
+---
+algorithm:
+  id: ALG.KT128
+  name: KT128
+  inputs: [M, C, L]
+  output: out
+  references: ["FR-011", "FR-012", "FR-013"]
+---
+algorithm:
+  id: ALG.KT256
+  name: KT256
+  inputs: [M, C, L]
+  output: out
+  references: ["FR-011", "FR-014"]
+---
+id: API.HopMAC128
+name: HopMAC128
+category: mac
+inputs:
+  - name: Key
+    type: ByteString
+    constraints_ref: "HopMAC.Key_length"
+  - name: M
+    type: ByteString
+    constraints_ref: "KangarooTwelve.M_length"
+  - name: C
+    type: ByteString
+    constraints_ref: "KangarooTwelve.C_length"
+  - name: L
+    type: UInt64
+    constraints_ref: "HopMAC.L_HopMAC128"
+output:
+  name: tag
+  type: ByteString
+  constraints: "|tag| = L"
+errors:
+  - category: ParameterError
+    when: "Any violation of the referenced interface constraints for Key, M, C, or L (see Constraints.HopMAC.* and Constraints.KangarooTwelve.*)."
+notes:
+  - "Constructed as KT128(Key, KT128(M, C, 32), L)."
+---
+id: API.HopMAC256
+name: HopMAC256
+category: mac
+inputs:
+  - name: Key
+    type: ByteString
+    constraints_ref: "HopMAC.Key_length"
+  - name: M
+    type: ByteString
+    constraints_ref: "KangarooTwelve.M_length"
+  - name: C
+    type: ByteString
+    constraints_ref: "KangarooTwelve.C_length"
+  - name: L
+    type: UInt64
+    constraints_ref: "HopMAC.L_HopMAC256"
+output:
+  name: tag
+  type: ByteString
+  constraints: "|tag| = L"
+errors:
+  - category: ParameterError
+    when: "Any violation of the referenced interface constraints for Key, M, C, or L (see Constraints.HopMAC.* and Constraints.KangarooTwelve.*)."
+notes:
+  - "Constructed as KT256(Key, KT256(M, C, 64), L)."
+---
+algorithm:
+  id: ALG.HopMAC128
+  name: HopMAC128
+  inputs: [Key, M, C, L]
+  output: tag
+  references: ["FR-015", "FR-017", "FR-023"]
+---
+algorithm:
+  id: ALG.HopMAC256
+  name: HopMAC256
+  inputs: [Key, M, C, L]
+  output: tag
+  references: ["FR-016", "FR-017", "FR-023"]
+---
+ConformanceCriteria:
+  - id: CC-1
+    title: "FR compliance for claimed primitives"
+    description: "For every primitive an implementation claims to support (KP, TurboSHAKE128, TurboSHAKE256, TurboSHAKEContext, KT128, KT256, HopMAC128, HopMAC256), all corresponding functional requirements FR-001…FR-024 that apply to those primitives MUST be satisfied for the specific profile version claimed by the implementation, with the exception of FR-023, which is strongly RECOMMENDED but not required for conformance."
+    references: ["FR-001…FR-024"]
+  - id: CC-2
+    title: "NFR compliance"
+    description: "All applicable non-functional requirements NFR-001…NFR-010 MUST be satisfied for the chosen primitives, in addition to the FRs."
+    references: ["NFR-001…NFR-010"]
+  - id: CC-3
+    title: "Test-vector coverage"
+    description: "Automated tests MUST cover and pass all RFC 9861 test vectors referenced in FR-019…FR-022. Automated tests SHOULD also cover the canonical local HopMAC test vectors defined in this section in a manner consistent with FR-023."
+    references: ["FR-019", "FR-020", "FR-021", "FR-022", "FR-023"]
+  - id: CC-4
+    title: "ProfileSchema internal consistency"
+    description: >
+      Schema-level conformance requires that the ProfileSchema invariants defined under
+      ProfileSchemaInvariants (for example, unique primitive/helper names in SpecIndex
+      and known scopes in ExternalTestSuites) be evaluated at least once for the specific
+      copy of the profile being used by any system (such as a spec validator, CI pipeline,
+      or canonical repository tooling) that parses the ProfileSchema and distributes or
+      treats that copy as a canonical source of truth. Such a system MUST run these checks
+      once per specification artifact before treating that artifact as structurally valid
+      for code generation or conformance claims. If any invariant fails, it is a defect
+      in the profile document itself, and any system claiming schema-level conformance
+      MUST treat such a profile as invalid and stop or escalate to a supervising system
+      rather than proceeding with code generation or conformance claims. These invariants
+      apply to the specification artifact, not to cryptographic library behavior. Library
+      implementations that claim behavioral profile conformance MAY rely on a ProfileSchema
+      artifact that has already passed these invariants (for example, an official release
+      or CI-validated copy) and are not required to re-run the invariant checks themselves,
+      though library authors SHOULD prefer consuming such validated artifacts.
+    references: ["ProfileSchemaInvariants", "ProfileSchemaInvariantsRole"]
+---
+ImplementationChecklist:
+  - id: STEP-1
+    title: "Keccak-p[1600,12] permutation"
+    description: "Implement KP as per FR-001."
+    references: ["FR-001"]
+  - id: STEP-2
+    title: "TurboSHAKE one-shot APIs"
+    description: "Implement one-shot TurboSHAKE128/256 APIs and parameter validation."
+    references: ["FR-002", "FR-003", "FR-004", "FR-005"]
+  - id: STEP-3
+    title: "TurboSHAKE sponge and XOF prefix"
+    description: "Implement TurboSHAKE sponge and verify the XOF prefix property."
+    references: ["FR-006", "FR-007"]
+  - id: STEP-4
+    title: "TurboSHAKE streaming API (optional)"
+    description: "If provided, implement the TurboSHAKE streaming/stateful API consistent with FR-008 and NFR-005."
+    references: ["FR-008", "NFR-005"]
+  - id: STEP-5
+    title: "length_encode(x)"
+    description: "Implement length_encode(x) and enforce its domain and usage constraints per FR-009/FR-010."
+    references: ["FR-009", "FR-010"]
+  - id: STEP-6
+    title: "KangarooTwelve (KT128/KT256)"
+    description: "Implement KT128/KT256 per the KT algorithms and FR-011–FR-014."
+    references: ["FR-011", "FR-012", "FR-013", "FR-014"]
+  - id: STEP-7
+    title: "HopMAC128/256"
+    description: "Implement HopMAC128/256 per FR-015–FR-017 and FR-023."
+    references: ["FR-015", "FR-016", "FR-017", "FR-023"]
+  - id: STEP-8
+    title: "Error handling and side-channel properties"
+    description: "Implement error handling and side-channel properties per NFR-001, NFR-002, NFR-003, NFR-006, and NFR-010."
+    references: ["NFR-001", "NFR-002", "NFR-003", "NFR-006", "NFR-010"]
+  - id: STEP-9
+    title: "Test-vector coverage"
+    description: "Add automated tests that cover all RFC 9861 test vectors per FR-018–FR-022 and NFR-008."
+    references: ["FR-018", "FR-019", "FR-020", "FR-021", "FR-022", "NFR-008"]
+  - id: STEP-10
+    title: "Local HopMAC vectors (recommended)"
+    description: "Add automated tests for the canonical HopMAC128 and HopMAC256 local test vectors defined in this profile’s “Test Vectors & Conformance – Local HopMAC Test Vectors” section and ensure that the computed tags for those `(Key, M, C, L)` tuples exactly match the reference tags. This step is strongly RECOMMENDED but not required for conformance; additional project-specific HopMAC test vectors MAY be added as desired but are outside this profile’s conformance scope."
+    references: ["FR-023"]
+  - id: STEP-11
+    title: "Documentation of mappings and limits"
+    description: "Document API mappings and any stricter limits per NFR-004, NFR-005, and NFR-009."
+    references: ["NFR-004", "NFR-005", "NFR-009"]

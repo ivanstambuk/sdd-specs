@@ -1,0 +1,16 @@
+# Specs index
+# Concrete list of spec units in this repository.
+
+specs:
+  - id: "sdd.crypto.xof.turboshake-kt-hopmac-rfc9861-profile"
+    version: "1.0.0"
+    path: "specs/protocols/crypto/turboshake-kt-hopmac-rfc9861-profile"
+    status: "draft"
+    domain: "crypto"
+    origin: "rfc"
+    tags:
+      - "TurboSHAKE"
+      - "KangarooTwelve"
+      - "HopMAC"
+      - "RFC9861"
+

@@ -1,0 +1,58 @@
+# SDD Specs – LLM Guide
+
+Compact orientation for AI and spec-writing assistants in this repository.
+
+## 1. Scope and Constraints
+- This repo is **spec-only**: SDD-style specs, profiles, bundles, schemas, and helper tools.
+- No implementation code, build scripts, or runtime configuration live here.
+- Specs are implementation‑neutral and technology‑agnostic; concrete stacks belong in profiles or downstream repos.
+
+## 2. Repository Layout
+- `specs/` – spec units (each a directory with `spec.yaml`, `spec.md`, optional `examples/`, `profiles/`, and `open-questions.md`).
+- `bundles/` – composition bundles that group specs and profiles.
+- `catalog/` – indices for specs, profiles, and bundles; must stay consistent with `specs/` and `bundles/`.
+- `schemas/` – JSON Schemas for validating specs, profiles, and bundles.
+- `tools/` – small, focused validation/lint helpers only.
+- `docs/` – vision, SDD principles, style/authoring guides, and this repo’s constitution and gates.
+
+## 3. Spec Workflow (SDD)
+- Start from `specs/_template-spec-unit/` when creating a new spec unit.
+- Treat `spec.yaml` (and any referenced bundles) as the **normative** definition; treat `spec.md` as narrative that must not contradict it.
+- Keep catalogs under `catalog/` in sync whenever specs, profiles, or bundles are added, moved, or deprecated.
+- For substantial spec changes, run the **Spec Analysis Gate** in `docs/spec-analysis-gate.md` (or at least mentally walk through it).
+
+## 4. Open Questions (Per Spec)
+- Each spec unit maintains its own `open-questions.md` (seeded from the template).
+- Use it only for **currently open** medium/high-impact questions about that spec.
+- When a question is resolved, first update `spec.yaml`, bundles, and any normative sections in `spec.md`, then remove the row from `open-questions.md`.
+- Question IDs (for example `Q-001`) are local to that spec and chat; do not reference them from catalogs or other global docs.
+
+## 5. Useful References
+- Repo constitution: `docs/specs-constitution.md`
+- SDD principles: `docs/sdd-principles.md`
+- Style guide: `docs/style-guide.md`
+- Authoring guidelines: `docs/authoring-guidelines.md`
+- Spec template: `specs/_template-spec-unit/`
+
+## 6. Expectations for Agents
+- Read the relevant spec unit and key docs before editing: `spec.yaml`, `spec.md`, examples/bundles, constitution, SDD principles, and style/authoring guides.
+- Prefer concrete, small diffs that keep specs, bundles, and catalogs aligned.
+- Do not introduce implementation details, build commands, or environment configs; those live in downstream implementation repos that consume these specs.
+
+## 7. Session Handover / Handoff Template
+
+When the human asks for a “session handover” (or “handoff”), prepare a copy/paste‑ready prompt for the next assistant using this template and fill in as many brackets as you can from repo context:
+
+```
+You’re resuming work on [spec/bundle/catalog identifier or short workstream name]. Core context:
+
+- Environment: repo at [path], spec-only (no implementation code). Validation helpers: `./tools/validate-specs.sh`, `./tools/validate-bundles.sh`. Follow `AGENTS.md`, `docs/specs-constitution.md`, `docs/sdd-principles.md`, `docs/style-guide.md`, and `docs/authoring-guidelines.md`.
+- Current status: active spec unit(s) […], profiles/bundles […], catalog entries […]. Spec Analysis Gate: [done/pending; link to `docs/spec-analysis-gate.md` or notes].
+- Recent increments: [brief bullet list of the last completed increments in this repo, noting key specs/bundles/catalog files touched and their outcomes].
+- Pending scope: [next planned edits], including open questions per spec (`open-questions.md` paths and IDs), required catalog updates, and any bundle/profile alignment work.
+- Git state: [branch], staged files [list or “clean”], outstanding TODOs [if any].
+- Next steps you should take now: [ordered checklist, e.g., “1. Update spec.yaml for … 2. Align spec.md narrative … 3. Update bundles/catalog … 4. Run validation scripts …”].
+- Reminders: keep increments small and spec-focused, avoid introducing implementation details, keep catalogs and bundles in sync with specs, run `./tools/validate-specs.sh` and `./tools/validate-bundles.sh` before finalising work, and clear or update `open-questions.md` entries once decisions are reflected in normative artefacts.
+```
+
+Use this template as the backbone of any “session handover” response so successors inherit a consistent, high-signal summary.

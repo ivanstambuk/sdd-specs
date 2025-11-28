@@ -1,0 +1,92 @@
+# Template for a single spec unit.
+# Copy this directory and replace all placeholder values.
+
+id: "sdd.<domain>.<area>.<name>"
+kind: "<protocol|feature|component|journey|library-api|idea>"
+title: "PLACEHOLDER_TITLE"
+version: "0.1.0"
+status: "<idea|draft|review|stable|deprecated|superseded>"
+
+domain: "PLACEHOLDER_DOMAIN"
+owner: "team-or-owner@example.org"
+visibility: "<public|internal|confidential>"
+
+origin:
+  type: "<first-party|rfc|fido2|other-standard>"
+  refs:
+    - "https://example.org/spec-or-rfc"
+  notes: "PLACEHOLDER_ORIGIN_NOTES"
+
+# Optional: if this spec unit is strongly anchored in one or more external
+# standards (for example, an RFC or FIPS document), you may summarize that
+# relationship here in narrative form (for example, “profile of RFC 1234”,
+# “extends section 5 of XYZ spec”, etc.). Keep this description short and
+# implementation-neutral; behavioral details belong in normative artefacts.
+
+lifecycle:
+  created: "YYYY-MM-DD"
+  last_updated: "YYYY-MM-DD"
+  replaces: []
+  superseded_by: []
+
+# Optional: if this spec unit relies on additional machine-readable bundles
+# (for example, a profile schema, conformance/test bundle, or JSON Schemas),
+# you may reference them here. Remove or adapt this section if not needed.
+#
+# normative_bundles:
+#   core: "./PLACEHOLDER_CORE_BUNDLE.yaml"
+#   tests: "./PLACEHOLDER_TEST_BUNDLE.yaml"
+
+dependencies:
+  requires:
+    - "sdd.example.required-spec@^1.0.0"
+  optional:
+    - "sdd.example.optional-spec@^1.0.0"
+
+# The following sections are intended for specs that model behavior directly
+# in this file (for example, via conceptual inputs/outputs and operations).
+# For specs that delegate behavior to external bundles or schemas referenced
+# from `normative_bundles`, these sections may be minimal or omitted, as long
+# as the overall spec remains clear and implementation-neutral.
+
+abstractions:
+  inputs:
+    - name: "PLACEHOLDER_INPUT_NAME"
+      type: "PLACEHOLDER_TYPE"
+      constraints:
+        PLACEHOLDER_CONSTRAINT_KEY: PLACEHOLDER_CONSTRAINT_VALUE
+  outputs:
+    - name: "PLACEHOLDER_OUTPUT_NAME"
+      type: "PLACEHOLDER_TYPE"
+      constraints:
+        PLACEHOLDER_CONSTRAINT_KEY: PLACEHOLDER_CONSTRAINT_VALUE
+  parameters:
+    - name: "PLACEHOLDER_PARAMETER_NAME"
+      type: "<enum|string|integer|boolean|…>"
+      allowed_values: ["PLACEHOLDER_VALUE_1", "PLACEHOLDER_VALUE_2"]
+      default: "PLACEHOLDER_VALUE_1"
+
+operations:
+  - name: "PLACEHOLDER_OPERATION_NAME"
+    description: "Short, imperative description of the operation."
+    inputs: ["PLACEHOLDER_INPUT_NAME"]
+    outputs: ["PLACEHOLDER_OUTPUT_NAME"]
+    preconditions:
+      - "PLACEHOLDER_PRECONDITION"
+    postconditions:
+      - "PLACEHOLDER_POSTCONDITION"
+    invariants:
+      - "PLACEHOLDER_INVARIANT"
+    pseudo_code_ref: "spec.md#placeholder-section"
+
+non_functional:
+  security_strength_bits: 0
+  side_channel_considerations:
+    - "PLACEHOLDER_SIDE_CHANNEL_NOTE"
+  performance_notes:
+    - "PLACEHOLDER_PERFORMANCE_NOTE"
+
+examples:
+  test_vectors_file: "./examples/vectors.yaml"
+  walkthroughs:
+    - "spec.md#placeholder-walkthrough"

@@ -1,0 +1,8 @@
+title = "SDD Specs gitleaks configuration"
+
+[allowlist]
+# Keep empty for now; add explicit exceptions as needed.
+
+[rules]
+# Use default built-in detectors; this section intentionally minimal.
+
