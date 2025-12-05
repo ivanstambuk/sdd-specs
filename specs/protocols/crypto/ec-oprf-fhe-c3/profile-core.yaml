@@ -1,0 +1,1294 @@
+ProfileBundle:
+  id: ec-oprf-fhe-c3-profile
+  version: "1.0.0"
+  schema_version: 1
+  description: Canonical ProfileSchema bundle for the EC-OPRF + FHE password breach-check unit (c3/ec-oprf-fhe).
+  unit_id: ec-oprf-fhe-c3
+  namespace: c3/ec-oprf-fhe
+
+Profiles:
+  profiles:
+    oprf-only:
+      title: EC-OPRF + k-anonymous buckets (no FHE)
+      description: |
+        Deployments that support EC-OPRF-based breach checks and k-anonymous encrypted buckets,
+        but do not expose the BFV FHE membership-check route.
+      requires_features:
+        - ec-oprf-core
+        - buckets-k-anon
+
+    oprf-plus-fhe:
+      title: EC-OPRF + k-anonymous buckets + BFV FHE
+      description: |
+        Deployments that support the EC-OPRF flow and k-anonymous encrypted buckets and additionally
+        implement the BFV FHE membership-check HTTP API.
+      requires_features:
+        - ec-oprf-core
+        - buckets-k-anon
+        - fhe-bfv-membership
+
+  feature_flags:
+    ec-oprf-core:
+      description: EC-OPRF evaluate route and metadata fields are available.
+    buckets-k-anon:
+      description: Bucket retrieval route with encrypted entries and k-anonymous padding is available.
+    fhe-bfv-membership:
+      description: FHE BFV evaluate route is enabled and BFV context parsing and validation are supported.
+
+  bfv_parameter_sets:
+    - id: BFV-32768-2148728833-9x[60,50,50,50,50,50,50,50,60]
+      description: >
+        Default BFV parameter set for this unit: polynomial degree 32768,
+        plain modulus 2148728833, and a coefficient-modulus ladder with bit
+        sizes [60, 50, 50, 50, 50, 50, 50, 50, 60].
+      poly_degree: 32768
+      plain_modulus: 2148728833
+      coeff_mod_bit_sizes: [60, 50, 50, 50, 50, 50, 50, 50, 60]
+      security_level_bits: 128
+      category: default
+      external_spec_id: MS-SEAL-BFV
+      external_profile_hint: "SEAL BFV 128-bit security, large poly degree"
+
+  ErrorModel:
+    ResultType:
+      - id: Result.Success
+        description: Successful OPRF, bucket, or FHE response (2xx).
+      - id: Result.ClientError
+        description: Client-side error (4xx) with a stable Problem Details payload.
+      - id: Result.ServerError
+        description: Server-side failure (5xx) where internal details are masked.
+
+    ErrorCategory:
+      - id: Precondition
+        description: Suite or deployment preconditions were not met.
+      - id: InputValidation
+        description: Request inputs failed validation (format, size, or semantics).
+      - id: Availability
+        description: Service or specific feature is temporarily unavailable or bucket limits were exceeded.
+      - id: RateLimit
+        description: Per-client or global rate limits were exceeded.
+
+  ProblemTypes:
+      - id: PT.MetadataUnavailable
+        type: "urn:problem:metadata:unavailable"
+        category: Availability
+        result_type: Result.ServerError
+        http_status: 503
+        requirements: [REQ-API-ERR-META-UNAVAILABLE]
+      - id: PT.MetadataInvalid
+        type: "urn:problem:metadata:invalid"
+        category: InputValidation
+        result_type: Result.ClientError
+        http_status: 400
+        requirements: [REQ-API-ERR-META-INVALID]
+      - id: PT.SuiteIdRequired
+        type: "urn:problem:precondition:suite-id-required"
+        category: Precondition
+        result_type: Result.ClientError
+        http_status: 428
+        requirements: [REQ-API-ERR-OPRF-SUITE-ID-REQUIRED]
+      - id: PT.SuiteIdMismatch
+        type: "urn:problem:precondition:suite-id-mismatch"
+        category: Precondition
+        result_type: Result.ClientError
+        http_status: 412
+        requirements: [REQ-API-ERR-OPRF-SUITE-ID-MISMATCH]
+      - id: PT.OPRFInvalidRequest
+        type: "urn:problem:oprf:invalid-request"
+        category: InputValidation
+        result_type: Result.ClientError
+        http_status: 400
+        requirements: [REQ-API-ERR-OPRF-BAD-REQUEST]
+      - id: PT.BucketsInvalidPrefix
+        type: "urn:problem:buckets:invalid-prefix"
+        category: InputValidation
+        result_type: Result.ClientError
+        http_status: 400
+        requirements: [REQ-API-ERR-BUCKET-INVALID-PREFIX]
+      - id: PT.BucketsExceedsPadTarget
+        type: "urn:problem:buckets:exceeds-pad-target"
+        category: Availability
+        result_type: Result.ServerError
+        http_status: 503
+        requirements: [REQ-API-ERR-BUCKET-EXCEEDS-PAD]
+      - id: PT.FHEUnavailable
+        type: "urn:problem:fhe:unavailable"
+        category: Availability
+        result_type: Result.ServerError
+        http_status: 503
+        requirements: [REQ-API-ERR-FHE-UNAVAILABLE]
+      - id: PT.FHEBucketExceedsPadTarget
+        type: "urn:problem:fhe:bucket-exceeds-pad-target"
+        category: Availability
+        result_type: Result.ServerError
+        http_status: 503
+        requirements: [REQ-API-ERR-FHE-BUCKET-EXCEEDS-PAD]
+      - id: PT.FHEUpstreamUnavailable
+        type: "urn:problem:fhe:upstream-unavailable"
+        category: Availability
+        result_type: Result.ServerError
+        http_status: 503
+        requirements: [REQ-API-ERR-FHE-UPSTREAM-UNAVAILABLE]
+      - id: PT.FHEInvalidPrefix
+        type: "urn:problem:fhe:invalid-prefix"
+        category: InputValidation
+        result_type: Result.ClientError
+        http_status: 400
+        requirements: [REQ-API-ERR-FHE-INVALID-PREFIX]
+      - id: PT.FHEInvalidContext
+        type: "urn:problem:fhe:invalid-context"
+        category: InputValidation
+        result_type: Result.ClientError
+        http_status: 400
+        requirements: [REQ-API-ERR-FHE-INVALID-CONTEXT]
+      - id: PT.FHEInvalidCiphertext
+        type: "urn:problem:fhe:invalid-ciphertext"
+        category: InputValidation
+        result_type: Result.ClientError
+        http_status: 400
+        requirements: [REQ-API-ERR-FHE-INVALID-CIPHERTEXT]
+      - id: PT.FHEContextTooLarge
+        type: "urn:problem:fhe:context-too-large"
+        category: InputValidation
+        result_type: Result.ClientError
+        http_status: 400
+        requirements: [REQ-API-ERR-FHE-CONTEXT-TOO-LARGE]
+      - id: PT.FHECiphertextTooLarge
+        type: "urn:problem:fhe:ciphertext-too-large"
+        category: InputValidation
+        result_type: Result.ClientError
+        http_status: 400
+        requirements: [REQ-API-ERR-FHE-CIPHERTEXT-TOO-LARGE]
+      - id: PT.RateLimit
+        type: "urn:problem:rate-limit"
+        category: RateLimit
+        result_type: Result.ClientError
+        http_status: 429
+        requirements: [REQ-API-RATE-LIMIT-001, REQ-API-RATE-LIMIT-CLI-001]
+      - id: PT.AuthUnauthorized
+        type: "urn:problem:auth:unauthorized"
+        category: Precondition
+        result_type: Result.ClientError
+        http_status: 401
+        requirements: [REQ-API-ERR-AUTH-UNAUTHORIZED]
+      - id: PT.AuthForbidden
+        type: "urn:problem:auth:forbidden"
+        category: Precondition
+        result_type: Result.ClientError
+        http_status: 403
+        requirements: [REQ-API-ERR-AUTH-FORBIDDEN]
+
+Behavior:
+  requirements:
+    # EC-OPRF core
+    - id: REQ-OPRF-001
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        The OPRF SHALL use the NIST P-256 elliptic curve (secp256r1) as the
+        underlying prime-order group.
+    - id: REQ-OPRF-002
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Hash-to-curve SHALL use the RFC 9380 P256_XMD:SHA-256_SSWU_RO suite in
+        random-oracle mode.
+    - id: REQ-OPRF-003
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Each logical input type (password SHA-1 digest, password SHA-256 digest,
+        username+password SHA-256 digest) SHALL use a distinct domain-separation
+        tag (DST) when invoking hash-to-curve.
+    - id: REQ-OPRF-010
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Implementations SHALL support at least three logical inputs: sha1_p
+        (SHA-1(password)), sha256_p (SHA-256(password)), and sha256_up
+        (SHA-256(canonicalized_username || password)).
+    - id: REQ-OPRF-011
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        For each digest d, the client SHALL compute an elliptic-curve point
+        M = H2C(d, DST) using the configured hash-to-curve suite and DST.
+    - id: REQ-OPRF-012
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        For each point M, the client SHALL sample a random non-zero scalar r
+        uniformly from [1, n-1], where n is the P-256 group order.
+    - id: REQ-OPRF-013
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        The client SHALL compute a blinded point B = r · M and encode it as
+        a SEC1 compressed point for transport.
+    - id: REQ-OPRF-014
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        For sha256_up, the canonicalized_username SHALL be obtained by NFKD
+        decomposition, dropping characters with Unicode category "Mn", applying
+        Unicode casefolding, and stripping ASCII whitespace from both ends
+        before concatenation with the UTF-8 password bytes.
+    - id: REQ-OPRF-020
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        The server SHALL hold a secret scalar sk on P-256 which acts as the OPRF
+        key.
+    - id: REQ-OPRF-021
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Upon receiving a blinded point B, the server SHALL compute Yc = sk · B
+        and return Yc encoded in SEC1 compressed format.
+    - id: REQ-OPRF-022
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        The client SHALL decode Yc, compute r^{-1} modulo n, and derive the
+        unblinded OPRF output Y = r^{-1} · Yc.
+    - id: REQ-OPRF-023
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        For a given input digest and OPRF key, the unblinded point Y SHALL be
+        deterministic and indistinguishable from random to an adversary that
+        does not know sk, under the one-more Gap-CDH assumption.
+    - id: REQ-OPRF-030
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Clients SHALL derive symmetric keys from OPRF outputs using HKDF
+        with SHA-256, using salt and info values published via metadata.
+    - id: REQ-OPRF-031
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        The derived keys SHALL be suitable for AES-128-GCM (16-byte keys).
+    - id: REQ-OPRF-032
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Encrypted breach entries SHALL be protected using AES-GCM with 12-byte
+        IVs and authentication tags of at least 16 bytes.
+    - id: REQ-OPRF-033
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Additional Authenticated Data (AAD) for AES-GCM SHALL be constructed as
+        I2OSP(len(label), 2) || label || I2OSP(bucket_idx, w) where label and w
+        are published via metadata.
+    - id: REQ-OPRF-034
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        AES-GCM initialization vectors (IVs) SHALL be unique for each AEAD key.
+        Deterministic IV derivation is permitted only when uniqueness under a
+        given key is guaranteed. The hash-to-curve domain separation tags,
+        HKDF salt and info values, AEAD AAD labels, and IV-derivation labels
+        SHALL be treated as suite parameters that influence encryptability and
+        SHALL be covered by the suite_id binding.
+    - id: REQ-OPRF-040
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Scalar multiplications, inversions, and point deserialization in the
+        OPRF implementation SHALL avoid secret-dependent branches and memory
+        access patterns to provide constant-time behavior to the extent practical.
+
+    # Buckets
+    - id: REQ-BUCKET-001
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        The bucket index bucket_idx SHALL be derived by computing
+        H = SHA-256(SEC1_compressed(M)) for the hash-to-curve point M associated
+        with the relevant digest and taking the high-order NUM_BUCKET_BITS bits
+        of H.
+    - id: REQ-BUCKET-002
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        The value of NUM_BUCKET_BITS SHALL be published via the metadata endpoint
+        and used consistently by clients and servers when computing bucket_idx.
+    - id: REQ-BUCKET-010
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Each bucket SHALL contain encrypted entries of fixed plaintext size
+        (for example, 32-byte digests) plus dummy entries.
+    - id: REQ-BUCKET-011
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Each bucket SHALL be padded with dummy entries up to a target pad_to
+        value published via configuration or metadata.
+    - id: REQ-BUCKET-012
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        If real entries in a bucket exceed pad_to, the server SHALL treat this
+        as an error and SHALL NOT expose the true bucket size via the standard
+        bucket API.
+    - id: REQ-BUCKET-013
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        The width parameter w used in I2OSP(bucket_idx, w) for AEAD AAD SHALL
+        be at least ceil(NUM_BUCKET_BITS / 8) bytes, and its value SHALL be
+        published via metadata so that clients and servers bind the full
+        bucket index width.
+    - id: REQ-BUCKET-014
+      level: should
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Within a given suite_id epoch, servers SHOULD generate deterministic
+        padding entries and a stable ordering of bucket entries so that
+        repeated requests for the same bucket index return the same multiset
+        and order of encoded entries, except when an intentional rotation or
+        dataset update occurs.
+    - id: REQ-BUCKET-015
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        The AEAD plaintext for each encrypted bucket entry SHALL be a fixed-
+        length digest computed as SHA-256(entry_label || digest) where
+        entry_label is the byte string obtained from entry.label_hex in
+        metadata and digest is the password-derived digest for the logical
+        input mode (sha1_p, sha256_p, or sha256_up). The plaintext length
+        SHALL equal entry.plaintext_bytes and SHALL be 32 bytes when
+        entry.algorithm is "SHA-256".
+    - id: REQ-BUCKET-020
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Each encrypted bucket entry SHALL be encoded as hex of
+        IV || ciphertext || tag, where IV is 12 bytes.
+    - id: REQ-BUCKET-021
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        The server SHALL return an array of such hex strings in the entries
+        field of the bucket response body.
+
+    # Client-side bucket matching
+    - id: REQ-CLI-BUCKET-MATCH-001
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Clients performing local bucket decryption SHALL treat a decrypted
+        plaintext value as a breach match for a given logical input digest
+        only when the plaintext bytes are exactly equal to the reference value
+        SHA-256(entry_label || digest), where entry_label is obtained from
+        entry.label_hex in metadata and digest is the password-derived digest
+        for the logical input mode (sha1_p, sha256_p, or sha256_up) computed
+        as profiled for this unit (REQ-BUCKET-015).
+    - id: REQ-CLI-BUCKET-MATCH-002
+      level: should
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Clients SHOULD compare decrypted bucket plaintexts against their
+        reference SHA-256(entry_label || digest) values using constant-time
+        equality checks that avoid early-exit branches on the first differing
+        byte, in order to reduce timing side channels when processing mixed
+        match and non-match entries.
+
+    # Metadata and HTTP APIs
+    - id: REQ-API-META-001
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        The server SHALL expose GET /v1/metadata returning a JSON object that
+        conforms to the metadata schema defined for this unit (see spec.md §5.1.1)
+        and that includes suite_id, OPRF parameters, bucket parameters, and
+        KDF/AEAD parameters sufficient for clients to configure themselves.
+        Successful responses for this endpoint SHALL use HTTP status code 200.
+    - id: REQ-API-META-002
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Clients SHALL fetch /v1/metadata before using other endpoints and bind
+        their configuration to the published suite_id.
+    - id: REQ-API-META-003
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Responses from GET /v1/metadata SHALL include Cache-Control directives
+        that prevent intermediaries from serving stale metadata across suite_id
+        rotations (for example Cache-Control: no-store or an equivalent
+        no-reuse policy). Metadata responses SHOULD use HTTP 200 for successful
+        fetches and MAY use 304 Not Modified only in conjunction with explicit
+        conditional requests; in all cases, clients SHALL treat stale or
+        missing metadata as a hard failure to proceed with evaluate or bucket
+        requests.
+    - id: REQ-API-META-FHE-001
+      level: must
+      applies_to_profiles: [oprf-plus-fhe]
+      text: >
+        When the fhe-bfv-membership feature is enabled, the /v1/metadata
+        response SHALL include a top-level fhe_bfv object with fields
+        available (boolean), scheme (string), parameter_set_id (string),
+        max_context_bytes (integer), and max_ciphertext_bytes (integer). The
+        value of scheme SHALL be "BFV". The parameter_set_id value SHALL equal
+        the id of one of the bfv_parameter_sets entries defined in this
+        ProfileBundle and identifies the BFV parameter set that the server is
+        prepared to accept for this suite. The max_context_bytes and
+        max_ciphertext_bytes fields SHALL publish the maximum allowed sizes in
+        bytes for the decoded BFV context and ciphertext payloads enforced by
+        REQ-FHE-021.
+    - id: REQ-API-ERR-META-INVALID
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      problem_type: PT.MetadataInvalid
+      text: >
+        Malformed /v1/metadata responses (for example invalid JSON, unsupported
+        Content-Type, or missing required top-level sections) SHALL be reported
+        as HTTP 400 with the ProblemType PT.MetadataInvalid from ErrorModel.
+    - id: REQ-API-ERR-META-UNAVAILABLE
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      problem_type: PT.MetadataUnavailable
+      text: >
+        When the server cannot return metadata for operational reasons (for
+        example misconfiguration or transient backend failures), it SHALL
+        respond to GET /v1/metadata with HTTP 503 and the ProblemType
+        PT.MetadataUnavailable from ErrorModel.
+    # Transport and authentication
+    - id: REQ-TRANSPORT-HTTPS-001
+      level: should
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Deployments SHOULD expose the profiled endpoints only over an
+        authenticated, confidentiality-preserving transport such as HTTPS with
+        TLS 1.2 or later, or an equivalent channel that provides comparable
+        confidentiality and integrity guarantees. Exposing these endpoints
+        over cleartext on shared or multi-tenant networks is NOT RECOMMENDED.
+    - id: REQ-AUTH-ERROR-CONTRACT-001
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Authentication and authorization layers (for example mTLS, API keys, or
+        tokens) SHALL NOT change the JSON schema, Problem Details types, or
+        status codes defined for the profiled endpoints when requests are
+        otherwise well-formed. Auth-related failures MAY result in additional
+        401 or 403 responses but MUST NOT leak authentication state by varying
+        ProblemTypes or response shapes for the same logical error condition.
+        When these endpoints return RFC 9457 Problem Details for auth failures,
+        401 responses SHALL use the ProblemType PT.AuthUnauthorized and 403
+        responses SHALL use the ProblemType PT.AuthForbidden as defined in the
+        ErrorModel.
+    - id: REQ-API-META-AUTH-001
+      level: should
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Deployments MAY require authentication for GET /v1/metadata, but SHOULD
+        ensure that any principal permitted to call the evaluate and bucket
+        endpoints can also retrieve metadata. When authentication is enforced
+        on /v1/metadata and a request is rejected because credentials are
+        missing, invalid, or expired, servers SHOULD respond with HTTP 401 and
+        the ProblemType PT.AuthUnauthorized; when a principal is authenticated
+        but not authorized to use this unit at all, servers SHOULD respond with
+        HTTP 403 and the ProblemType PT.AuthForbidden.
+    # Client metadata guard behavior
+    - id: REQ-CLI-META-001
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Clients SHALL treat /v1/metadata responses as invalid and SHALL NOT
+        call evaluate or bucket endpoints when the HTTP status is not 200, the
+        body is not well-formed JSON, the schema_version major component is
+        unsupported for this profile, or required sections or fields (including
+        schema_version, suite_id, api_versions, suite, oprf, kdf, aead, buckets,
+        entry, and endpoints) are missing or malformed.
+    - id: REQ-CLI-META-002
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Clients SHALL validate that aead.algorithm equals "AES-128-GCM",
+        aead.iv_bytes equals 12, aead.aad_format equals the profiled contract
+        "I2OSP(len(label),2)||label||I2OSP(bucket_idx,bucket_index_bytes)",
+        and aead.aad_bucket_index_bytes equals ceil(num_bucket_bits / 8) where
+        num_bucket_bits is obtained from buckets; any mismatch SHALL cause the
+        client to treat the metadata as invalid and abort rather than proceed
+        with the suite.
+    - id: REQ-CLI-META-003
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Clients SHALL validate that kdf.hkdf_info and kdf.hkdf_salt_hex are
+        present and well-formed, that entry.algorithm equals "SHA-256", and
+        that entry.plaintext_bytes equals 32; malformed or contradictory values
+        SHALL be treated as hard configuration errors, and clients SHALL NOT
+        attempt OPRF or bucket operations under such metadata.
+    - id: REQ-CLI-META-004
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Clients SHALL validate that oprf.scheme equals "EC-OPRF",
+        oprf.curve equals "secp256r1", and both oprf.request_point_format and
+        oprf.response_point_format equal "sec1-compressed-hex"; any mismatch
+        SHALL cause the client to treat the metadata as invalid and abort
+        rather than proceed with evaluate or bucket requests.
+    - id: REQ-CLI-META-IGNORE-UNKNOWN
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Clients SHALL ignore unknown fields in the top-level metadata object
+        and within the suite, oprf, kdf, aead, entry, buckets, fhe_bfv, and
+        endpoints objects unless such fields are explicitly profiled by this
+        unit. The presence of additional, unrecognized fields in these objects
+        SHALL NOT by itself cause clients to reject otherwise valid metadata.
+    - id: REQ-CLI-META-FHE-001
+      level: must
+      applies_to_profiles: [oprf-plus-fhe]
+      text: >
+        Clients that make use of the FHE BFV evaluate route SHALL derive BFV
+        contexts and ciphertext shapes from the fhe_bfv section of
+        /v1/metadata rather than from hard-coded parameter sets or out-of-band
+        documentation. In particular, clients SHALL verify that fhe_bfv.scheme
+        equals "BFV" and that fhe_bfv.parameter_set_id matches a known BFV
+        parameter set, and SHALL treat missing or unknown parameter_set_id,
+        max_context_bytes, or max_ciphertext_bytes values as hard configuration
+        errors that prevent use of the FHE route under that suite.
+    - id: REQ-API-OPRF-001
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        The server SHALL expose POST /v1/oprf/evaluate as the OPRF evaluation
+        endpoint. Successful OPRF evaluate responses SHALL use HTTP status
+        code 200 with a JSON body as profiled for this unit.
+    - id: REQ-API-OPRF-002
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        The POST /v1/oprf/evaluate request body SHALL be JSON containing three
+        fields B_sha1_p, B_sha256_p, and B_sha256_up, each holding a blinded
+        point encoded as a SEC1 compressed point in lowercase hexadecimal.
+        Implementations SHALL reject requests where any of these fields is
+        missing, empty, contains non-hex characters, or has an unexpected
+        length for a SEC1-compressed P-256 point and SHALL map such requests
+        to the ProblemType PT.OPRFInvalidRequest. Servers SHALL ignore any
+        additional top-level JSON fields whose names are not B_sha1_p,
+        B_sha256_p, or B_sha256_up; the presence of such fields SHALL NOT by
+        itself cause the request to be rejected under this profile.
+    - id: REQ-API-OPRF-003
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Clients SHALL include an X-Suite-Id header equal to the suite_id from
+        metadata on evaluate requests; missing or mismatched values SHALL
+        result in 428 or 412 responses respectively.
+    - id: REQ-API-OPRF-004
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        The OPRF evaluate response SHALL be JSON containing evaluated points in
+        fields Yc_sha1, Yc_sha256, and Yc_sha256_up, each a SEC1 compressed
+        point in lowercase hexadecimal corresponding to the respective blinded
+        inputs.
+    - id: REQ-API-BKT-001
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        The server SHALL expose GET /v1/buckets with three query parameters
+        sha1, sha256, and sha256_up. Each parameter value SHALL be a fixed-
+        length hexadecimal string of exactly buckets.prefix_digits characters
+        (0-9, a-f, A-F) representing the high-order NUM_BUCKET_BITS bits of the
+        corresponding logical digest (sha1_p, sha256_p, or sha256_up) as a
+        big-endian integer. The endpoint SHALL return a JSON object with an
+        entries array of encoded bucket entries, and successful responses
+        SHALL use HTTP status code 200.
+    - id: REQ-API-BKT-002
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        The server SHALL support HEAD /v1/buckets with the same query
+        parameters and SHALL mirror caching-related headers (Cache-Control,
+        ETag, and Vary: X-Suite-Id) and status codes as GET /v1/buckets,
+        including 200 and 304 for conditional requests. Successful HEAD
+        responses SHALL use only HTTP 200 or 304 and SHALL NOT include a
+        response body.
+    - id: REQ-API-BKT-003
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Bucket responses SHALL include Cache-Control, ETag, and Vary: X-Suite-Id
+        headers to enable safe caching partitioned by suite.
+    - id: REQ-API-BKT-004
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Invalid bucket prefixes SHALL result in 400 responses and missing or
+        mismatched X-Suite-Id headers SHALL result in 428 or 412 responses.
+    - id: REQ-API-ERR-001
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Error responses for all endpoints in this unit (metadata, OPRF
+        evaluate, bucket retrieval, and FHE evaluate) SHALL use RFC 9457
+        Problem Details with content type application/problem+json for all
+        4xx and 5xx status codes defined by this unit, including 400, 401,
+        403, 412, 413, 415, 428, 429, 500, and 503. 3xx status codes,
+        including 304 Not Modified, are exempt from this requirement and
+        SHALL NOT include Problem Details bodies. Other non-2xx status codes
+        SHALL NOT be used for the profiled endpoints.
+    - id: REQ-API-ERR-TRACE-ID
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Problem Details error responses for the endpoints in this unit SHALL
+        include a non-sensitive trace_id field when a trace identifier is
+        available in the current request context. The trace_id value SHALL be
+        a 32-character lowercase hexadecimal string, SHALL be stable for the
+        lifetime of the request, and is intended solely for correlation with
+        server logs and traces.
+    - id: REQ-API-ERR-AUTH-UNAUTHORIZED
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      problem_type: PT.AuthUnauthorized
+      text: >
+        When authentication is required for an endpoint in this unit and the
+        request is rejected because credentials are missing, invalid, or
+        expired, the server SHALL respond with HTTP 401 and the ProblemType
+        PT.AuthUnauthorized from ErrorModel.
+    - id: REQ-API-ERR-AUTH-FORBIDDEN
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      problem_type: PT.AuthForbidden
+      text: >
+        When authentication succeeds but the authenticated principal is not
+        authorized to invoke an endpoint in this unit, the server SHALL
+        respond with HTTP 403 and the ProblemType PT.AuthForbidden from
+        ErrorModel.
+    - id: REQ-CLI-AUTH-ERRORS-001
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Clients SHALL NOT interpret HTTP 401 or 403 responses from the
+        profiled endpoints (including /v1/metadata, /v1/oprf/evaluate,
+        /v1/buckets, and /v1/fhe/evaluate) as definitive "not breached"
+        results. When a 401 response uses the ProblemType PT.AuthUnauthorized,
+        clients SHOULD treat it as an authentication failure that MAY be
+        resolved by refreshing or supplying credentials. When a 403 response
+        uses the ProblemType PT.AuthForbidden, clients SHOULD treat it as a
+        permission error that indicates the caller is not authorized for the
+        operation and SHOULD only retry after a change in authorization state.
+
+    # Problem Details type registry (OPRF + buckets + FHE subset)
+    - id: REQ-API-ERR-OPRF-SUITE-ID-REQUIRED
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      problem_type: PT.SuiteIdRequired
+      text: >
+        When the X-Suite-Id header is missing on an evaluate or bucket request,
+        the server SHALL return the ProblemType PT.SuiteIdRequired from ErrorModel.
+    - id: REQ-API-ERR-OPRF-SUITE-ID-MISMATCH
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      problem_type: PT.SuiteIdMismatch
+      text: >
+        When the X-Suite-Id header does not match the active suite, the server
+        SHALL return the ProblemType PT.SuiteIdMismatch from ErrorModel.
+    - id: REQ-API-ERR-OPRF-BAD-REQUEST
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      problem_type: PT.OPRFInvalidRequest
+      text: >
+        Invalid OPRF requests (for example malformed SEC1 points or missing
+        fields) SHALL be mapped to the ProblemType PT.OPRFInvalidRequest from
+        ErrorModel, with an implementation-defined detail string suitable for debugging.
+    - id: REQ-API-ERR-BUCKET-INVALID-PREFIX
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      problem_type: PT.BucketsInvalidPrefix
+      text: >
+        Invalid bucket prefixes (wrong length or non-hex characters) SHALL be
+        mapped to the ProblemType PT.BucketsInvalidPrefix from ErrorModel.
+    - id: REQ-API-ERR-BUCKET-EXCEEDS-PAD
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      problem_type: PT.BucketsExceedsPadTarget
+      text: >
+        When a bucket would exceed the configured pad_to limit and the server
+        chooses to hide the real cardinality, it SHALL respond using the
+        ProblemType PT.BucketsExceedsPadTarget from ErrorModel.
+    - id: REQ-API-ERR-FHE-UNAVAILABLE
+      level: must
+      applies_to_profiles: [oprf-plus-fhe]
+      problem_type: PT.FHEUnavailable
+      text: >
+        When the FHE BFV feature is disabled or the FHE engine is unavailable,
+        the server SHALL return the ProblemType PT.FHEUnavailable from ErrorModel.
+    - id: REQ-API-ERR-FHE-BUCKET-EXCEEDS-PAD
+      level: must
+      applies_to_profiles: [oprf-plus-fhe]
+      problem_type: PT.FHEBucketExceedsPadTarget
+      text: >
+        When an FHE bucket would exceed the configured pad_to limit and the
+        server chooses to hide the real cardinality, it SHALL respond using
+        the ProblemType PT.FHEBucketExceedsPadTarget from ErrorModel.
+    - id: REQ-API-ERR-FHE-UPSTREAM-UNAVAILABLE
+      level: must
+      applies_to_profiles: [oprf-plus-fhe]
+      problem_type: PT.FHEUpstreamUnavailable
+      text: >
+        Failures to assemble FHE residues or retrieve upstream bucket data
+        SHALL be mapped to the ProblemType PT.FHEUpstreamUnavailable from
+        ErrorModel.
+    - id: REQ-API-ERR-FHE-INVALID-PREFIX
+      level: must
+      applies_to_profiles: [oprf-plus-fhe]
+      problem_type: PT.FHEInvalidPrefix
+      text: >
+        Invalid FHE bucket prefixes (wrong length or non-hex characters) SHALL be
+        mapped to the ProblemType PT.FHEInvalidPrefix from ErrorModel.
+    - id: REQ-API-ERR-FHE-INVALID-CONTEXT
+      level: must
+      applies_to_profiles: [oprf-plus-fhe]
+      problem_type: PT.FHEInvalidContext
+      text: >
+        Invalid or unsupported BFV contexts (scheme, degree, modulus ladder, or
+        missing relinearization keys) SHALL be mapped to the ProblemType
+        PT.FHEInvalidContext from ErrorModel.
+    - id: REQ-API-ERR-FHE-INVALID-CIPHERTEXT
+      level: must
+      applies_to_profiles: [oprf-plus-fhe]
+      problem_type: PT.FHEInvalidCiphertext
+      text: >
+        Ciphertext deserialization errors or wrong slot counts SHALL be mapped
+        to the ProblemType PT.FHEInvalidCiphertext from ErrorModel.
+    - id: REQ-API-ERR-FHE-CONTEXT-TOO-LARGE
+      level: must
+      applies_to_profiles: [oprf-plus-fhe]
+      problem_type: PT.FHEContextTooLarge
+      text: >
+        Context payloads that exceed configured size limits SHALL be mapped to
+        the ProblemType PT.FHEContextTooLarge from ErrorModel.
+    - id: REQ-API-ERR-FHE-CIPHERTEXT-TOO-LARGE
+      level: must
+      applies_to_profiles: [oprf-plus-fhe]
+      problem_type: PT.FHECiphertextTooLarge
+      text: >
+        Ciphertext payloads that exceed configured size limits SHALL be mapped
+        to the ProblemType PT.FHECiphertextTooLarge from ErrorModel.
+
+    # Rate limiting and abuse resistance
+    - id: REQ-API-RATE-LIMIT-001
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Server deployments SHALL implement configurable rate limiting and/or
+        quota enforcement for OPRF, bucket, and FHE evaluate endpoints and
+        SHALL surface HTTP 429 Too Many Requests responses with the
+        ProblemType PT.RateLimit from ErrorModel when limits are exceeded.
+        Servers SHOULD include a Retry-After header on 429 responses to convey
+        backoff guidance to clients. Rate limits MAY be per-endpoint, per
+        client identity, or global and are deployment-specific, but MUST
+        result in observable 429 responses under sustained overuse.
+    - id: REQ-API-RATE-LIMIT-CLI-001
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Clients SHALL treat HTTP 429 responses from evaluate, bucket, and FHE
+        endpoints as transient signals of rate limiting rather than definitive
+        "not breached" results. When a Retry-After header is present on a 429
+        response, clients SHALL honor it before retrying; when it is absent,
+        clients SHOULD apply a local backoff policy.
+
+    # Logging and privacy
+    - id: REQ-LOG-PRIVACY-001
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Server logs SHALL NOT contain raw passwords, username+password digests,
+        unblinded OPRF outputs, BFV plaintexts, or derived symmetric keys; logs
+        SHOULD be limited to non-sensitive metadata such as timestamps, status
+        codes, trace identifiers, and high-level error categories.
+
+    # Resilience and 5xx behavior
+    - id: REQ-RESILIENCE-5XX-001
+      level: should
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Unexpected internal failures SHOULD be reported as 5xx Problem Details
+        responses that avoid leaking stack traces or secrets; clients SHOULD
+        treat 5xx as transient errors and MAY retry idempotent requests subject
+        to their own backoff and safety policies.
+    - id: REQ-RESILIENCE-LATENCY-001
+      level: should
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        For a fixed suite_id epoch and comparable inputs, server-side request
+        handling for evaluate, bucket, and FHE endpoints SHOULD have bounded
+        end-to-end latency and SHOULD avoid input-dependent early exits that
+        materially distinguish "match" from "non-match" or small from large
+        buckets. Implementations SHOULD define and enforce sane per-request
+        CPU and wall-clock limits and fail closed with 5xx rather than partly
+        completing oversized work.
+    - id: REQ-RESILIENCE-CONCURRENCY-001
+      level: should
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Deployments SHOULD enforce per-client and global concurrency caps for
+        evaluate, bucket, and FHE endpoints so that abusive or buggy clients
+        cannot exhaust server resources. Concurrency caps SHOULD be configured
+        consistently with the rate limiting policy (REQ-API-RATE-LIMIT-001)
+        and SHOULD prefer rejecting excess work with 429 or 503 over allowing
+        unbounded queuing.
+
+    # FHE BFV membership (optional profile)
+    - id: REQ-FHE-001
+      level: must
+      applies_to_profiles: [oprf-plus-fhe]
+      text: >
+        The FHE evaluate route SHALL implement a BFV scheme over integers.
+    - id: REQ-FHE-002
+      level: must
+      applies_to_profiles: [oprf-plus-fhe]
+      text: >
+        The server SHALL accept a client-provided BFV context and ciphertext as
+        opaque byte strings and treat them as such after validation.
+    - id: REQ-FHE-003
+      level: must
+      applies_to_profiles: [oprf-plus-fhe]
+      text: >
+        When the client decrypts the returned BFV ciphertext, the plaintext SHALL
+        equal 0 if the queried value is present in the bucket and SHALL be a
+        non-zero element otherwise. Clients SHALL treat decryption failures or
+        plaintext values that fall outside the expected BFV plaintext modulus or
+        slot structure as errors rather than as "no match" results.
+    - id: REQ-FHE-004
+      level: must
+      applies_to_profiles: [oprf-plus-fhe]
+      text: >
+        FHE evaluation SHALL use deterministic padding and constant-work
+        evaluation over a fixed number of terms per bucket.
+    - id: REQ-FHE-010
+      level: must
+      applies_to_profiles: [oprf-plus-fhe]
+      text: >
+        The server SHALL expose POST /v1/fhe/evaluate when the fhe-bfv-membership
+        feature is enabled. Successful FHE evaluate responses SHALL use HTTP
+        status code 200 with a JSON body as profiled for this unit.
+    - id: REQ-FHE-011
+      level: must
+      applies_to_profiles: [oprf-plus-fhe]
+      text: >
+        The FHE evaluate request body SHALL be JSON with fields hash_algorithm,
+        bucket_prefix_hex, context_b64, and ciphertext_b64.
+    - id: REQ-FHE-014
+      level: must
+      applies_to_profiles: [oprf-plus-fhe]
+      text: >
+        The hash_algorithm field in the FHE evaluate request SHALL be one of
+        "sha1", "sha256", or "sha256_up" and SHALL select the corresponding
+        logical input type defined for EC-OPRF (REQ-OPRF-010, REQ-OPRF-014)
+        when deriving bucket prefixes and residues.
+    - id: REQ-FHE-012
+      level: must
+      applies_to_profiles: [oprf-plus-fhe]
+      text: >
+        Clients SHALL include X-Suite-Id on FHE evaluate requests and the server
+        SHALL enforce the same suite binding semantics as for OPRF.
+    - id: REQ-FHE-013
+      level: must
+      applies_to_profiles: [oprf-plus-fhe]
+      text: >
+        The FHE evaluate response body SHALL be JSON containing ciphertext_b64,
+        a base64url-encoded result ciphertext.
+    - id: REQ-FHE-020
+      level: must
+      applies_to_profiles: [oprf-plus-fhe]
+      text: >
+        The server SHALL validate BFV parameters (scheme, polynomial degree,
+        plain modulus, coefficient-modulus ladder, and presence of
+        relinearization keys) against an allowed parameter policy and SHALL
+        support at least the default parameter set BFV-32768-2148728833-9x[60,50,50,50,50,50,50,50,60]
+        defined under bfv_parameter_sets. When a metadata entry references a
+        bfv_parameter_sets record via fhe_bfv.parameter_set_id, the values
+        published in that record (poly_degree, plain_modulus,
+        coeff_mod_bit_sizes, and security_level_bits) SHALL be treated as the
+        authoritative BFV parameters for that suite_id epoch by both clients
+        and servers. Servers SHALL validate that decoded BFV contexts used
+        with a given parameter_set_id are compatible with the corresponding
+        bfv_parameter_sets record (at minimum scheme, polynomial degree, plain
+        modulus, and coefficient-modulus ladder) and SHALL map violations to
+        the ProblemType PT.FHEInvalidContext rather than a generic 400.
+    - id: REQ-FHE-021
+      level: must
+      applies_to_profiles: [oprf-plus-fhe]
+      text: >
+        The server SHALL enforce maximum sizes for context_b64 and ciphertext_b64
+        and SHALL reject oversized inputs with 400 responses. Oversized decoded
+        context_b64 payloads SHALL be mapped to PT.FHEContextTooLarge and
+        oversized decoded ciphertext_b64 payloads SHALL be mapped to
+        PT.FHECiphertextTooLarge; inputs that are within size limits but fail
+        subsequent structural validation SHALL NOT use these ProblemTypes.
+    - id: REQ-FHE-023
+      level: must
+      applies_to_profiles: [oprf-plus-fhe]
+      text: >
+        For context_b64 values that are within configured size limits, servers
+        SHALL perform at least the following structural checks before
+        evaluation: (1) the decoded context represents a BFV scheme compatible
+        with the chosen library; (2) the polynomial degree, plain modulus, and
+        coefficient-modulus ladder are compatible with the referenced
+        bfv_parameter_sets record; and (3) required auxiliary keys such as
+        relinearization keys are present or otherwise available if required by
+        the implementation. Failures of these structural checks SHALL be
+        mapped to PT.FHEInvalidContext.
+    - id: REQ-FHE-024
+      level: must
+      applies_to_profiles: [oprf-plus-fhe]
+      text: >
+        For ciphertext_b64 values that are within configured size limits,
+        servers SHALL ensure that ciphertexts can be deserialized by the BFV
+        library and are compatible with the provided context (for example the
+        modulus chain and number of components) and that the effective slot
+        count is within expected bounds for this profile. Failures of these
+        checks SHALL be mapped to PT.FHEInvalidCiphertext.
+    - id: REQ-FHE-022
+      level: must
+      applies_to_profiles: [oprf-plus-fhe]
+      text: >
+        If a bucket would exceed the configured pad_to limit for FHE, the server
+        SHALL respond with 503 and SHALL NOT leak the true bucket size.
+    - id: REQ-FHE-030
+      level: must
+      applies_to_profiles: [oprf-plus-fhe]
+      text: >
+        This spec does not define a normative BFV ciphertext serialization
+        format; ciphertexts SHALL be treated as opaque by the API.
+    - id: REQ-FHE-031
+      level: must
+      applies_to_profiles: [oprf-plus-fhe]
+      text: >
+        Cross-library decryption of ciphertexts produced by different BFV
+        implementations is a non-goal; conforming implementations SHALL NOT
+        assume wire-format compatibility.
+    - id: REQ-FHE-040
+      level: must
+      applies_to_profiles: [oprf-plus-fhe]
+      text: >
+        The BFV parameter sets used for this unit SHALL provide at least
+        128-bit classical security under standard RLWE hardness estimates; the
+        concrete parameter sets SHALL be advertised via metadata or deployment
+        documentation.
+    - id: REQ-FHE-041
+      level: should
+      applies_to_profiles: [oprf-plus-fhe]
+      text: >
+        Implementations using the default parameter set
+        BFV-32768-2148728833-9x[60,50,50,50,50,50,50,50,60] SHOULD verify that
+        their chosen BFV library's security guidance (for example MS-SEAL-BFV)
+        matches the advertised security_level_bits for this set.
+
+    # Key management, rotation, and suite binding
+    - id: REQ-KEY-001
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        The server SHALL maintain an OPRF private key sk that is bound to the
+        configured suite parameters and deployment context, and SHALL ensure
+        that a given suite_id uniquely identifies the combination of public
+        parameters and the corresponding OPRF key epoch.
+    - id: REQ-KEY-002
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        The metadata endpoint SHALL publish an opaque suite_id value that
+        remains stable across restarts for a fixed OPRF key and public
+        parameters, and that changes whenever the OPRF key or suite parameters
+        that affect bucket encryptability change.
+    - id: REQ-KEY-003
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Clients receiving 428 Precondition Required or 412 Precondition Failed
+        responses due to missing or mismatched X-Suite-Id headers on evaluate
+        or bucket requests SHALL treat them as signals to refetch /v1/metadata,
+        update their bound suite configuration, and retry the request at most
+        once.
+    - id: REQ-KEY-004
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        The suite_id value published via /v1/metadata SHALL be computed as the
+        base64url encoding without padding of the SHA-256 digest of a
+        deterministic JSON encoding of public suite parameters and the OPRF
+        key commitment. Implementations SHALL construct a JSON object with the
+        following fields and values: aead_algorithm ("AES-128-GCM"),
+        aead_iv_bytes (IV length in bytes), aead_label_hex (hex of the AEAD
+        label), entry_algorithm ("SHA-256"), entry_label_hex (hex of the entry
+        digest label), h2c_dst_hex (hex of the hash-to-curve domain separation
+        tag), kdf_info (HKDF info string), kdf_salt_hex (hex of the HKDF salt),
+        key_commitment (hex of the SEC1-compressed OPRF public key), and
+        num_bucket_bits (the bucket index width). The JSON SHALL be serialized
+        with keys sorted in lexicographic order, without extra whitespace, and
+        encoded as UTF-8 prior to hashing. FHE and OPE parameters SHALL NOT be
+        included in this binding.
+    - id: REQ-KEY-005
+      level: must
+      applies_to_profiles: [oprf-only, oprf-plus-fhe]
+      text: >
+        Clients SHALL scope suite_id bindings to a single deployment origin
+        (for example a specific scheme+host+port) and SHALL NOT reuse metadata
+        or suite-bound configuration obtained from one origin when making
+        requests to a different origin, even if the suite_id string matches.
+
+  functional_requirements:
+    - id: FR-OPRF-API-001
+      summary: EC-OPRF evaluate endpoint and algorithm flow.
+      applies_to_profiles:
+        - oprf-only
+        - oprf-plus-fhe
+      references:
+        - REQ-OPRF-001
+        - REQ-OPRF-002
+        - REQ-OPRF-003
+        - REQ-OPRF-010
+        - REQ-OPRF-011
+        - REQ-OPRF-012
+        - REQ-OPRF-013
+        - REQ-OPRF-020
+        - REQ-OPRF-021
+        - REQ-OPRF-022
+        - REQ-OPRF-023
+        - REQ-API-OPRF-001
+        - REQ-API-OPRF-002
+        - REQ-API-OPRF-003
+        - REQ-API-OPRF-004
+      external_test_suites:
+        - RFC9380-H2C-P256
+        - RFC9497-OPRF-P256-SHA256
+    - id: FR-METADATA-001
+      summary: Metadata endpoint for suite configuration.
+      applies_to_profiles:
+        - oprf-only
+        - oprf-plus-fhe
+      references:
+        - REQ-API-META-001
+        - REQ-API-META-002
+        - REQ-API-META-003
+        - REQ-API-META-FHE-001
+    - id: FR-BUCKETS-API-001
+      summary: K-anonymous encrypted bucket retrieval endpoints.
+      applies_to_profiles:
+        - oprf-only
+        - oprf-plus-fhe
+      references:
+        - REQ-BUCKET-001
+        - REQ-BUCKET-002
+        - REQ-BUCKET-010
+        - REQ-BUCKET-011
+        - REQ-BUCKET-012
+        - REQ-BUCKET-015
+        - REQ-CLI-BUCKET-MATCH-001
+        - REQ-CLI-BUCKET-MATCH-002
+        - REQ-BUCKET-020
+        - REQ-BUCKET-021
+        - REQ-API-BKT-001
+        - REQ-API-BKT-002
+        - REQ-API-BKT-003
+        - REQ-API-BKT-004
+    - id: FR-FHE-API-001
+      summary: BFV FHE membership-check endpoint and semantics.
+      applies_to_profiles:
+        - oprf-plus-fhe
+      references:
+        - REQ-FHE-001
+        - REQ-FHE-002
+        - REQ-FHE-003
+        - REQ-FHE-004
+        - REQ-FHE-010
+        - REQ-FHE-011
+        - REQ-FHE-012
+        - REQ-FHE-013
+        - REQ-FHE-020
+        - REQ-FHE-021
+        - REQ-FHE-022
+
+  non_functional_requirements:
+    - id: NFR-CONSTANT-WORK-001
+      summary: Constant-work evaluation for FHE buckets.
+      applies_to_profiles:
+        - oprf-plus-fhe
+      references:
+        - REQ-FHE-004
+        - REQ-FHE-022
+    - id: NFR-CACHING-001
+      summary: Safe caching semantics for bucket responses.
+      applies_to_profiles:
+        - oprf-only
+        - oprf-plus-fhe
+      references:
+        - REQ-API-BKT-003
+        - REQ-KEY-002
+        - REQ-API-META-003
+        - REQ-BUCKET-014
+    - id: NFR-SUITE-BINDING-001
+      summary: Binding all evaluate endpoints to X-Suite-Id.
+      applies_to_profiles:
+        - oprf-only
+        - oprf-plus-fhe
+      references:
+        - REQ-API-META-002
+        - REQ-API-OPRF-003
+        - REQ-FHE-012
+        - REQ-KEY-001
+        - REQ-KEY-003
+        - REQ-OPRF-034
+        - REQ-KEY-004
+        - REQ-KEY-005
+    - id: NFR-KEY-ROTATION-001
+      summary: Key rotation and suite epoch behavior for OPRF and buckets.
+      applies_to_profiles:
+        - oprf-only
+        - oprf-plus-fhe
+      references:
+        - REQ-KEY-001
+        - REQ-KEY-002
+        - REQ-KEY-003
+    - id: NFR-BUCKET-STABILITY-001
+      summary: Stable bucket contents and ordering within a suite epoch.
+      applies_to_profiles:
+        - oprf-only
+        - oprf-plus-fhe
+      references:
+        - REQ-BUCKET-011
+        - REQ-BUCKET-012
+        - REQ-BUCKET-014
+    - id: NFR-OBSERVABILITY-TRACE-001
+      summary: Trace context propagation and error correlation via trace_id.
+      applies_to_profiles:
+        - oprf-only
+        - oprf-plus-fhe
+      references:
+        - REQ-API-ERR-001
+        - REQ-API-ERR-TRACE-ID
+    - id: NFR-OPAQUE-CIPHERTEXT-001
+      summary: BFV ciphertexts treated as opaque and non-portable.
+      applies_to_profiles:
+        - oprf-plus-fhe
+      references:
+        - REQ-FHE-030
+        - REQ-FHE-031
+    - id: NFR-OPRF-CONSTANT-TIME-001
+      summary: Constant-time behavior for OPRF scalar and point operations.
+      applies_to_profiles:
+        - oprf-only
+        - oprf-plus-fhe
+      references:
+        - REQ-OPRF-040
+    - id: NFR-RATE-LIMIT-001
+      summary: Rate limiting and abuse resistance for evaluate and bucket endpoints.
+      applies_to_profiles:
+        - oprf-only
+        - oprf-plus-fhe
+      references:
+        - REQ-API-RATE-LIMIT-001
+        - REQ-API-RATE-LIMIT-CLI-001
+    - id: NFR-LOGGING-PRIVACY-001
+      summary: Logging practices must avoid sensitive password and key material.
+      applies_to_profiles:
+        - oprf-only
+        - oprf-plus-fhe
+      references:
+        - REQ-LOG-PRIVACY-001
+    - id: NFR-RESILIENCE-5XX-001
+      summary: Resilient handling and masking of internal errors via 5xx Problem Details.
+      applies_to_profiles:
+        - oprf-only
+        - oprf-plus-fhe
+      references:
+        - REQ-RESILIENCE-5XX-001
+    - id: NFR-LATENCY-BOUNDS-001
+      summary: Bounded and input-insensitive latency for evaluate, bucket, and FHE endpoints.
+      applies_to_profiles:
+        - oprf-only
+        - oprf-plus-fhe
+      references:
+        - REQ-RESILIENCE-LATENCY-001
+        - REQ-API-RATE-LIMIT-001
+    - id: NFR-CONCURRENCY-CAPS-001
+      summary: Concurrency caps aligned with rate limiting to prevent resource exhaustion.
+      applies_to_profiles:
+        - oprf-only
+        - oprf-plus-fhe
+      references:
+        - REQ-RESILIENCE-CONCURRENCY-001
+        - REQ-API-RATE-LIMIT-001
+    - id: NFR-METADATA-GUARD-001
+      summary: Clients validate metadata parameters and reject malformed suites.
+      applies_to_profiles:
+        - oprf-only
+        - oprf-plus-fhe
+      references:
+        - REQ-API-META-001
+        - REQ-API-META-002
+        - REQ-API-META-003
+        - REQ-CLI-META-001
+        - REQ-CLI-META-002
+        - REQ-CLI-META-003
+        - REQ-CLI-META-004
+        - REQ-CLI-META-IGNORE-UNKNOWN
+    - id: NFR-TRANSPORT-AUTH-001
+      summary: Confidential, authenticated transport and stable error contracts.
+      applies_to_profiles:
+        - oprf-only
+        - oprf-plus-fhe
+      references:
+        - REQ-TRANSPORT-HTTPS-001
+        - REQ-AUTH-ERROR-CONTRACT-001
+        - REQ-API-ERR-AUTH-UNAUTHORIZED
+        - REQ-API-ERR-AUTH-FORBIDDEN
+        - REQ-CLI-AUTH-ERRORS-001
+
+ExternalSpecs:
+  - id: RFC9380
+    title: "RFC 9380 - Hashing to Elliptic Curves"
+    url: "https://www.rfc-editor.org/rfc/rfc9380"
+    role: "Primary RFC defining the P256_XMD:SHA-256_SSWU_RO hash-to-curve suite used for EC-OPRF inputs in this unit."
+  - id: RFC9497
+    title: "RFC 9497 - Oblivious Pseudorandom Functions (OPRFs) Using Prime-Order Groups"
+    url: "https://www.rfc-editor.org/rfc/rfc9497"
+    role: "Primary RFC defining the P256-SHA256 OPRF ciphersuite and transcript framing that this unit profiles."
+  - id: MS-SEAL-BFV
+    title: "Microsoft SEAL - BFV scheme documentation"
+    url: "https://github.com/microsoft/SEAL"
+    role: "Reference implementation and parameter guidance for BFV; used for parameter selection only. Ciphertext encodings are library-specific and not interoperable across implementations."
+
+ExternalTestSuites:
+  - id: RFC9380-H2C-P256
+    scope: ["H2C-P256-XMD-SHA256-SSWU"]
+    source_spec: RFC9380
+    section: "§8.2 and Appendix J.1.1"
+    references:
+      - REQ-OPRF-002
+      - REQ-OPRF-011
+  - id: RFC9497-OPRF-P256-SHA256
+    scope: ["OPRF-P256-SHA256"]
+    source_spec: RFC9497
+    section: "§4.3 P256-SHA256 ciphersuite"
+    references:
+      - REQ-OPRF-001
+      - REQ-OPRF-002
+      - REQ-OPRF-020
+      - REQ-OPRF-021
+
+ExternalTestVectors:
+  description: >
+    Index of external RFC-based test-vector families relevant to this unit.
+    RFC 9380 provides canonical hash-to-curve vectors for P256_XMD:SHA-256_SSWU_RO;
+    RFC 9497 defines the P256-SHA256 OPRF ciphersuite. BFV ciphertext test vectors
+    are library-specific and non-interoperable and are therefore not listed here.
+  vectors:
+    - id: RFC9380-P256-XMD-SHA256-SSWU-Example1
+      primitive: H2C-P256-XMD-SHA256-SSWU
+      source_spec: RFC9380
+      section: "Appendix J.1.1"
+      notes: "Use the published P-256 hash_to_group vectors to validate H2C implementation used in this unit."

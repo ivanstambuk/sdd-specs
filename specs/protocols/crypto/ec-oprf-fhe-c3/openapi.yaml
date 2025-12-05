@@ -1,0 +1,1922 @@
+components:
+  schemas:
+    BucketOut:
+      properties:
+        entries:
+          description: Encrypted entries in hex(IV||CT||TAG)
+          examples:
+          - - 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+          items:
+            type: string
+          title: Entries
+          type: array
+      required:
+      - entries
+      title: BucketOut
+      type: object
+    EvalIn:
+      description: "Evaluate request with three blinded points (_p for password, _up\
+        \ for user+password).\n\nNotes:\n    Each field is a SEC1-compressed point\
+        \ encoded as a 66-character\n    lowercase hexadecimal string (33 bytes).\
+        \ The prefix must be either ``02``\n    or ``03``. Uppercase inputs are normalized\
+        \ to lowercase.\n\n    Conceptual derivation (client-side):\n    - ``B_sha1_p``:\
+        \ let ``d1 = SHA-1(password)``; compute\n      ``M1 = H2C(SHA-256(d1), DST_SHA256_OF_SHA1)``;\n\
+        \      blind with random non-zero scalar ``r``.\n    - ``B_sha256_p``: let\
+        \ ``d2 = SHA-256(password)``; compute\n      ``M2 = H2C(SHA-256(d2), DST_SHA256_OF_SHA256)``;\n\
+        \      blind with random non-zero scalar ``r``.\n    - ``B_sha256_up``: username\
+        \ canonicalization per docs, bytes ``U||P`` (no delimiter),\n      ``d3 =\
+        \ SHA-256(U||P)``; compute ``M3 = H2C(SHA-256(d3), DST_SHA256_OF_SHA256_UP)``;\
+        \ blind."
+      properties:
+        B_sha1_p:
+          description: 'SEC1-compressed hex blinded point for SHA-1 inner-digest path:
+            B_sha1_p = r * H2C(SHA-1(password), DST for SHA-1 path)'
+          examples:
+          - '021111111111111111111111111111111111111111111111111111111111111111'
+          maxLength: 66
+          minLength: 66
+          title: B Sha1 P
+          type: string
+        B_sha256_p:
+          description: 'SEC1-compressed hex blinded point for SHA-256 direct-digest
+            path: B_sha256_p = r * H2C(SHA-256(password), DST for SHA-256 path)'
+          examples:
+          - '032222222222222222222222222222222222222222222222222222222222222222'
+          maxLength: 66
+          minLength: 66
+          title: B Sha256 P
+          type: string
+        B_sha256_up:
+          description: 'SEC1-compressed hex blinded point for SHA-256(username+password):
+            B_sha256_up = r * H2C(SHA-256(U||P), DST for SHA-256-UP path)'
+          examples:
+          - '023333333333333333333333333333333333333333333333333333333333333333'
+          maxLength: 66
+          minLength: 66
+          title: B Sha256 Up
+          type: string
+      required:
+      - B_sha1_p
+      - B_sha256_p
+      - B_sha256_up
+      title: EvalIn
+      type: object
+    EvalOut:
+      properties:
+        Yc_sha1:
+          description: hex SEC1-compressed evaluated point (SHA1-inner, password)
+          examples:
+          - 02eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+          title: Yc Sha1
+          type: string
+        Yc_sha256:
+          description: hex SEC1-compressed evaluated point (SHA256-direct, password)
+          examples:
+          - 03cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+          title: Yc Sha256
+          type: string
+        Yc_sha256_up:
+          description: hex SEC1-compressed evaluated point (SHA256 user+password)
+          examples:
+          - 02aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          title: Yc Sha256 Up
+          type: string
+      required:
+      - Yc_sha1
+      - Yc_sha256
+      - Yc_sha256_up
+      title: EvalOut
+      type: object
+    FHEEvaluateRequest:
+      description: 'Evaluate a BFV equality product over a k-anonymous bucket.'
+      properties:
+        bucket_prefix_hex:
+          description: High-order NUM_BUCKET_BITS of the digest as hex (HIBP-style)
+          title: Bucket Prefix Hex
+          type: string
+        ciphertext_b64:
+          description: BFVVector ciphertext (base64url) encrypting digest mod p
+          maxLength: 1398104
+          title: Ciphertext B64
+          type: string
+        context_b64:
+          description: 'TenSEAL public context (base64url). Stateless: always present'
+          maxLength: 5592408
+          title: Context B64
+          type: string
+        hash_algorithm:
+          default: sha1
+          description: 'Hash algorithm: ''sha1'' | ''sha256'' | ''sha256_up'''
+          title: Hash Algorithm
+          type: string
+      required:
+      - hash_algorithm
+      - bucket_prefix_hex
+      - ciphertext_b64
+      - context_b64
+      title: FHEEvaluateRequest
+      type: object
+    FHEEvaluateResponse:
+      description: Single ciphertext result (base64url). 0 -> match; non-zero -> no
+        match.
+      properties:
+        ciphertext_b64:
+          title: Ciphertext B64
+          type: string
+      required:
+      - ciphertext_b64
+      title: FHEEvaluateResponse
+      type: object
+    HTTPValidationError:
+      properties:
+        detail:
+          items:
+            $ref: '#/components/schemas/ValidationError'
+          title: Detail
+          type: array
+      title: HTTPValidationError
+      type: object
+    HealthOut:
+      description: Health check response payload for liveness/readiness probes.
+      properties:
+        status:
+          title: Status
+          type: string
+        suite_id:
+          title: Suite Id
+          type: string
+        version:
+          title: Version
+          type: string
+      required:
+      - status
+      - version
+      - suite_id
+      title: HealthOut
+      type: object
+    OPEEvaluateRequest:
+      description: "Evaluate a Paillier-OPE polynomial over a k-anonymous bucket.\n\
+        \nThe client provides:\n  - Paillier modulus ``n`` (base64url big-endian),\
+        \ with implicit ``g=n+1``.\n  - A fixed-length vector of ciphertexts Enc(x^k)\
+        \ for k=0..OPE_MAX_DEGREE,\n    each as base64url big-endian modulo n^2.\n\
+        \  - The hash algorithm and bucket prefix to select roots."
+      properties:
+        bucket_prefix_hex:
+          description: High-order NUM_BUCKET_BITS of the digest as hex (HIBP-style)
+          title: Bucket Prefix Hex
+          type: string
+        ciphertexts_b64:
+          description: Fixed-length vector Enc(x^k) for k=0..OPE_MAX_DEGREE (base64url)
+          items:
+            type: string
+          title: Ciphertexts B64
+          type: array
+        hash_algorithm:
+          default: sha1
+          description: 'Hash algorithm: ''sha1'' | ''sha256'' | ''sha256_up'''
+          title: Hash Algorithm
+          type: string
+        paillier_n_b64:
+          description: Paillier modulus n (base64url, big-endian)
+          title: Paillier N B64
+          type: string
+      required:
+      - bucket_prefix_hex
+      - paillier_n_b64
+      - ciphertexts_b64
+      title: OPEEvaluateRequest
+      type: object
+    OPEEvaluateResponse:
+      description: Single ciphertext result (base64url). 0 -> match; non-zero -> no
+        match.
+      properties:
+        ciphertext_b64:
+          title: Ciphertext B64
+          type: string
+      required:
+      - ciphertext_b64
+      title: OPEEvaluateResponse
+      type: object
+    ValidationError:
+      properties:
+        loc:
+          items:
+            anyOf:
+            - type: string
+            - type: integer
+          title: Location
+          type: array
+        msg:
+          title: Message
+          type: string
+        type:
+          title: Error Type
+          type: string
+      required:
+      - loc
+      - msg
+      - type
+      title: ValidationError
+      type: object
+  securitySchemes:
+    mtls:
+      type: mutualTLS
+info:
+  contact:
+    email: security@example.com
+    name: Security Engineering
+  description: "Privacy-preserving password breach checks supporting two protocol\
+    \ families: (1) EC-OPRF with k-anonymous encrypted buckets; (2) optional FHE (BFV)\
+    \ homomorphic membership checks.\n\nCore endpoints:\n- POST /v1/oprf/evaluate\
+    \ \u2014 blind-evaluate two SEC1-compressed points.\n- POST /v1/fhe/evaluate \u2014\
+    \ masked equality over a bucket using BFV.\n- POST /v1/ope-paillier/evaluate \u2014\
+    \ Paillier-OPE (oblivious polynomial evaluation).\n- GET  /v1/buckets \u2014 retrieve\
+    \ encrypted entries for provided prefixes.\n- GET  /v1/metadata \u2014 public\
+    \ suite and API parameters.\n- GET  /v1/health, /v1/ready \u2014 liveness/readiness.\n\
+    \nNotes: Protocol availability is controlled via feature flags (see docs). The\
+    \ distribution version is exposed via /v1/metadata; the API version is independent\
+    \ and remains stable under /v1/*."
+  license:
+    name: Apache-2.0
+  title: Password Breach Check
+  version: 0.1.0
+openapi: 3.1.0
+paths:
+  /v1/buckets:
+    get:
+      description: Return entries for SHA-1(password), SHA-256(password), and SHA-256(username+password).
+      operationId: get_bucket_combined_v1_buckets_get
+      parameters:
+      - in: query
+        name: sha1
+        required: true
+        schema:
+          title: Sha1
+          type: string
+      - in: query
+        name: sha256
+        required: true
+        schema:
+          title: Sha256
+          type: string
+      - in: query
+        name: sha256_up
+        required: true
+        schema:
+          title: Sha256 Up
+          type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BucketOut'
+          description: Successful Response
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                additionalProperties: true
+                description: "RFC 9457 Problem Details response body model.\n\nNotes:\n\
+                  \    Extensions beyond the base fields are permitted and will be\
+                  \ included\n    when present. The OpenAPI annotation uses this model\
+                  \ for all error\n    responses and declares the `application/problem+json`\
+                  \ media type."
+                example:
+                  detail: invalid point
+                  instance: /v1/oprf/evaluate
+                  status: 400
+                  title: Bad Request
+                  trace_id: abcd1234efef0000abcd1234efef0000
+                  type: about:blank
+                properties:
+                  detail:
+                    title: Detail
+                    type: string
+                  instance:
+                    title: Instance
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  title:
+                    title: Title
+                    type: string
+                  type:
+                    title: Type
+                    type: string
+                required:
+                - type
+                - title
+                - status
+                - detail
+                - instance
+                title: ProblemDetails
+                type: object
+          description: Bad Request
+        '412':
+          content:
+            application/problem+json:
+              schema:
+                additionalProperties: true
+                description: "RFC 9457 Problem Details response body model.\n\nNotes:\n\
+                  \    Extensions beyond the base fields are permitted and will be\
+                  \ included\n    when present. The OpenAPI annotation uses this model\
+                  \ for all error\n    responses and declares the `application/problem+json`\
+                  \ media type."
+                example:
+                  detail: invalid point
+                  instance: /v1/oprf/evaluate
+                  status: 400
+                  title: Bad Request
+                  trace_id: abcd1234efef0000abcd1234efef0000
+                  type: about:blank
+                properties:
+                  detail:
+                    title: Detail
+                    type: string
+                  instance:
+                    title: Instance
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  title:
+                    title: Title
+                    type: string
+                  type:
+                    title: Type
+                    type: string
+                required:
+                - type
+                - title
+                - status
+                - detail
+                - instance
+                title: ProblemDetails
+                type: object
+          description: Precondition Failed
+        '428':
+          content:
+            application/problem+json:
+              schema:
+                additionalProperties: true
+                description: "RFC 9457 Problem Details response body model.\n\nNotes:\n\
+                  \    Extensions beyond the base fields are permitted and will be\
+                  \ included\n    when present. The OpenAPI annotation uses this model\
+                  \ for all error\n    responses and declares the `application/problem+json`\
+                  \ media type."
+                example:
+                  detail: invalid point
+                  instance: /v1/oprf/evaluate
+                  status: 400
+                  title: Bad Request
+                  trace_id: abcd1234efef0000abcd1234efef0000
+                  type: about:blank
+                properties:
+                  detail:
+                    title: Detail
+                    type: string
+                  instance:
+                    title: Instance
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  title:
+                    title: Title
+                    type: string
+                  type:
+                    title: Type
+                    type: string
+                required:
+                - type
+                - title
+                - status
+                - detail
+                - instance
+                title: ProblemDetails
+                type: object
+          description: Precondition Required
+        '500':
+          content:
+            application/problem+json:
+              schema:
+                additionalProperties: true
+                description: "RFC 9457 Problem Details response body model.\n\nNotes:\n\
+                  \    Extensions beyond the base fields are permitted and will be\
+                  \ included\n    when present. The OpenAPI annotation uses this model\
+                  \ for all error\n    responses and declares the `application/problem+json`\
+                  \ media type."
+                example:
+                  detail: invalid point
+                  instance: /v1/oprf/evaluate
+                  status: 400
+                  title: Bad Request
+                  trace_id: abcd1234efef0000abcd1234efef0000
+                  type: about:blank
+                properties:
+                  detail:
+                    title: Detail
+                    type: string
+                  instance:
+                    title: Instance
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  title:
+                    title: Title
+                    type: string
+                  type:
+                    title: Type
+                    type: string
+                required:
+                - type
+                - title
+                - status
+                - detail
+                - instance
+                title: ProblemDetails
+                type: object
+          description: Internal Server Error
+        '503':
+          content:
+            application/problem+json:
+              schema:
+                additionalProperties: true
+                description: "RFC 9457 Problem Details response body model.\n\nNotes:\n\
+                  \    Extensions beyond the base fields are permitted and will be\
+                  \ included\n    when present. The OpenAPI annotation uses this model\
+                  \ for all error\n    responses and declares the `application/problem+json`\
+                  \ media type."
+                example:
+                  detail: invalid point
+                  instance: /v1/oprf/evaluate
+                  status: 400
+                  title: Bad Request
+                  trace_id: abcd1234efef0000abcd1234efef0000
+                  type: about:blank
+                properties:
+                  detail:
+                    title: Detail
+                    type: string
+                  instance:
+                    title: Instance
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  title:
+                    title: Title
+                    type: string
+                  type:
+                    title: Type
+                    type: string
+                required:
+                - type
+                - title
+                - status
+                - detail
+                - instance
+                title: ProblemDetails
+                type: object
+          description: Service Unavailable
+      summary: Get Bucket Combined
+      tags:
+      - Buckets
+    head:
+      description: Return caching headers for SHA-1(password), SHA-256(password),
+        SHA-256(username+password).
+      operationId: head_bucket_combined_v1_buckets_head
+      parameters:
+      - in: query
+        name: sha1
+        required: true
+        schema:
+          title: Sha1
+          type: string
+      - in: query
+        name: sha256
+        required: true
+        schema:
+          title: Sha256
+          type: string
+      - in: query
+        name: sha256_up
+        required: true
+        schema:
+          title: Sha256 Up
+          type: string
+      responses:
+        '200':
+          description: OK
+        '304':
+          description: Not Modified
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                additionalProperties: true
+                description: "RFC 9457 Problem Details response body model.\n\nNotes:\n\
+                  \    Extensions beyond the base fields are permitted and will be\
+                  \ included\n    when present. The OpenAPI annotation uses this model\
+                  \ for all error\n    responses and declares the `application/problem+json`\
+                  \ media type."
+                example:
+                  detail: invalid point
+                  instance: /v1/oprf/evaluate
+                  status: 400
+                  title: Bad Request
+                  trace_id: abcd1234efef0000abcd1234efef0000
+                  type: about:blank
+                properties:
+                  detail:
+                    title: Detail
+                    type: string
+                  instance:
+                    title: Instance
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  title:
+                    title: Title
+                    type: string
+                  type:
+                    title: Type
+                    type: string
+                required:
+                - type
+                - title
+                - status
+                - detail
+                - instance
+                title: ProblemDetails
+                type: object
+          description: Bad Request
+        '412':
+          content:
+            application/problem+json:
+              schema:
+                additionalProperties: true
+                description: "RFC 9457 Problem Details response body model.\n\nNotes:\n\
+                  \    Extensions beyond the base fields are permitted and will be\
+                  \ included\n    when present. The OpenAPI annotation uses this model\
+                  \ for all error\n    responses and declares the `application/problem+json`\
+                  \ media type."
+                example:
+                  detail: invalid point
+                  instance: /v1/oprf/evaluate
+                  status: 400
+                  title: Bad Request
+                  trace_id: abcd1234efef0000abcd1234efef0000
+                  type: about:blank
+                properties:
+                  detail:
+                    title: Detail
+                    type: string
+                  instance:
+                    title: Instance
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  title:
+                    title: Title
+                    type: string
+                  type:
+                    title: Type
+                    type: string
+                required:
+                - type
+                - title
+                - status
+                - detail
+                - instance
+                title: ProblemDetails
+                type: object
+          description: Precondition Failed
+        '428':
+          content:
+            application/problem+json:
+              schema:
+                additionalProperties: true
+                description: "RFC 9457 Problem Details response body model.\n\nNotes:\n\
+                  \    Extensions beyond the base fields are permitted and will be\
+                  \ included\n    when present. The OpenAPI annotation uses this model\
+                  \ for all error\n    responses and declares the `application/problem+json`\
+                  \ media type."
+                example:
+                  detail: invalid point
+                  instance: /v1/oprf/evaluate
+                  status: 400
+                  title: Bad Request
+                  trace_id: abcd1234efef0000abcd1234efef0000
+                  type: about:blank
+                properties:
+                  detail:
+                    title: Detail
+                    type: string
+                  instance:
+                    title: Instance
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  title:
+                    title: Title
+                    type: string
+                  type:
+                    title: Type
+                    type: string
+                required:
+                - type
+                - title
+                - status
+                - detail
+                - instance
+                title: ProblemDetails
+                type: object
+          description: Precondition Required
+        '500':
+          content:
+            application/problem+json:
+              schema:
+                additionalProperties: true
+                description: "RFC 9457 Problem Details response body model.\n\nNotes:\n\
+                  \    Extensions beyond the base fields are permitted and will be\
+                  \ included\n    when present. The OpenAPI annotation uses this model\
+                  \ for all error\n    responses and declares the `application/problem+json`\
+                  \ media type."
+                example:
+                  detail: invalid point
+                  instance: /v1/oprf/evaluate
+                  status: 400
+                  title: Bad Request
+                  trace_id: abcd1234efef0000abcd1234efef0000
+                  type: about:blank
+                properties:
+                  detail:
+                    title: Detail
+                    type: string
+                  instance:
+                    title: Instance
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  title:
+                    title: Title
+                    type: string
+                  type:
+                    title: Type
+                    type: string
+                required:
+                - type
+                - title
+                - status
+                - detail
+                - instance
+                title: ProblemDetails
+                type: object
+          description: Internal Server Error
+        '503':
+          content:
+            application/problem+json:
+              schema:
+                additionalProperties: true
+                description: "RFC 9457 Problem Details response body model.\n\nNotes:\n\
+                  \    Extensions beyond the base fields are permitted and will be\
+                  \ included\n    when present. The OpenAPI annotation uses this model\
+                  \ for all error\n    responses and declares the `application/problem+json`\
+                  \ media type."
+                example:
+                  detail: invalid point
+                  instance: /v1/oprf/evaluate
+                  status: 400
+                  title: Bad Request
+                  trace_id: abcd1234efef0000abcd1234efef0000
+                  type: about:blank
+                properties:
+                  detail:
+                    title: Detail
+                    type: string
+                  instance:
+                    title: Instance
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  title:
+                    title: Title
+                    type: string
+                  type:
+                    title: Type
+                    type: string
+                required:
+                - type
+                - title
+                - status
+                - detail
+                - instance
+                title: ProblemDetails
+                type: object
+          description: Service Unavailable
+      summary: Head Bucket Combined
+      tags:
+      - Buckets
+  /v1/fhe/evaluate:
+    post:
+      description: Evaluate masked equality over the bucket indicated by the request.
+      operationId: fhe_evaluate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FHEEvaluateRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              examples:
+                success:
+                  summary: Encrypted result
+                  value:
+                    ciphertext_b64: AA
+              schema:
+                $ref: '#/components/schemas/FHEEvaluateResponse'
+          description: OK
+        '400':
+          content:
+            application/problem+json:
+              examples:
+                ciphertext_too_large:
+                  summary: Ciphertext exceeds configured cap
+                  value:
+                    detail: ciphertext too large
+                    instance: /v1/fhe/evaluate
+                    status: 400
+                    title: Bad Request
+                    type: urn:problem:fhe:ciphertext-too-large
+                context_too_large:
+                  summary: Context exceeds configured cap
+                  value:
+                    detail: context too large
+                    instance: /v1/fhe/evaluate
+                    status: 400
+                    title: Bad Request
+                    type: urn:problem:fhe:context-too-large
+                invalid_ciphertext:
+                  summary: Invalid BFV ciphertext
+                  value:
+                    detail: invalid ciphertext
+                    instance: /v1/fhe/evaluate
+                    status: 400
+                    title: Bad Request
+                    type: urn:problem:fhe:invalid-ciphertext
+                invalid_context:
+                  summary: Invalid TenSEAL context
+                  value:
+                    detail: invalid context
+                    instance: /v1/fhe/evaluate
+                    status: 400
+                    title: Bad Request
+                    type: urn:problem:fhe:invalid-context
+                invalid_prefix:
+                  summary: Invalid bucket prefix
+                  value:
+                    detail: invalid hex prefix
+                    instance: /v1/fhe/evaluate
+                    status: 400
+                    title: Bad Request
+                    type: urn:problem:fhe:invalid-prefix
+              schema:
+                additionalProperties: true
+                description: "RFC 9457 Problem Details response body model.\n\nNotes:\n\
+                  \    Extensions beyond the base fields are permitted and will be\
+                  \ included\n    when present. The OpenAPI annotation uses this model\
+                  \ for all error\n    responses and declares the `application/problem+json`\
+                  \ media type."
+                example:
+                  detail: invalid point
+                  instance: /v1/oprf/evaluate
+                  status: 400
+                  title: Bad Request
+                  trace_id: abcd1234efef0000abcd1234efef0000
+                  type: about:blank
+                properties:
+                  detail:
+                    title: Detail
+                    type: string
+                  instance:
+                    title: Instance
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  title:
+                    title: Title
+                    type: string
+                  type:
+                    title: Type
+                    type: string
+                required:
+                - type
+                - title
+                - status
+                - detail
+                - instance
+                title: ProblemDetails
+                type: object
+          description: Bad Request
+        '412':
+          content:
+            application/problem+json:
+              examples:
+                suite_id_mismatch:
+                  summary: X-Suite-Id mismatch
+                  value:
+                    detail: suite_id_mismatch
+                    instance: /v1/fhe/evaluate
+                    status: 412
+                    title: Precondition Failed
+                    type: urn:problem:precondition:suite-id-mismatch
+              schema:
+                additionalProperties: true
+                description: "RFC 9457 Problem Details response body model.\n\nNotes:\n\
+                  \    Extensions beyond the base fields are permitted and will be\
+                  \ included\n    when present. The OpenAPI annotation uses this model\
+                  \ for all error\n    responses and declares the `application/problem+json`\
+                  \ media type."
+                example:
+                  detail: invalid point
+                  instance: /v1/oprf/evaluate
+                  status: 400
+                  title: Bad Request
+                  trace_id: abcd1234efef0000abcd1234efef0000
+                  type: about:blank
+                properties:
+                  detail:
+                    title: Detail
+                    type: string
+                  instance:
+                    title: Instance
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  title:
+                    title: Title
+                    type: string
+                  type:
+                    title: Type
+                    type: string
+                required:
+                - type
+                - title
+                - status
+                - detail
+                - instance
+                title: ProblemDetails
+                type: object
+          description: Precondition Failed
+        '413':
+          content:
+            application/problem+json:
+              examples:
+                too_large:
+                  summary: Request body too large
+                  value:
+                    detail: request body too large
+                    instance: /v1/fhe/evaluate
+                    status: 413
+                    title: Payload Too Large
+                    type: about:blank
+              schema:
+                additionalProperties: true
+                description: "RFC 9457 Problem Details response body model.\n\nNotes:\n\
+                  \    Extensions beyond the base fields are permitted and will be\
+                  \ included\n    when present. The OpenAPI annotation uses this model\
+                  \ for all error\n    responses and declares the `application/problem+json`\
+                  \ media type."
+                example:
+                  detail: invalid point
+                  instance: /v1/oprf/evaluate
+                  status: 400
+                  title: Bad Request
+                  trace_id: abcd1234efef0000abcd1234efef0000
+                  type: about:blank
+                properties:
+                  detail:
+                    title: Detail
+                    type: string
+                  instance:
+                    title: Instance
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  title:
+                    title: Title
+                    type: string
+                  type:
+                    title: Type
+                    type: string
+                required:
+                - type
+                - title
+                - status
+                - detail
+                - instance
+                title: ProblemDetails
+                type: object
+          description: Payload Too Large
+        '415':
+          content:
+            application/problem+json:
+              examples:
+                not_json:
+                  summary: Content-Type must be application/json
+                  value:
+                    detail: content type must be application/json
+                    instance: /v1/fhe/evaluate
+                    status: 415
+                    title: Unsupported Media Type
+                    type: about:blank
+              schema:
+                additionalProperties: true
+                description: "RFC 9457 Problem Details response body model.\n\nNotes:\n\
+                  \    Extensions beyond the base fields are permitted and will be\
+                  \ included\n    when present. The OpenAPI annotation uses this model\
+                  \ for all error\n    responses and declares the `application/problem+json`\
+                  \ media type."
+                example:
+                  detail: invalid point
+                  instance: /v1/oprf/evaluate
+                  status: 400
+                  title: Bad Request
+                  trace_id: abcd1234efef0000abcd1234efef0000
+                  type: about:blank
+                properties:
+                  detail:
+                    title: Detail
+                    type: string
+                  instance:
+                    title: Instance
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  title:
+                    title: Title
+                    type: string
+                  type:
+                    title: Type
+                    type: string
+                required:
+                - type
+                - title
+                - status
+                - detail
+                - instance
+                title: ProblemDetails
+                type: object
+          description: Unsupported Media Type
+        '428':
+          content:
+            application/problem+json:
+              examples:
+                suite_id_required:
+                  summary: Missing X-Suite-Id
+                  value:
+                    detail: suite_id_required
+                    instance: /v1/fhe/evaluate
+                    status: 428
+                    title: Precondition Required
+                    type: urn:problem:precondition:suite-id-required
+              schema:
+                additionalProperties: true
+                description: "RFC 9457 Problem Details response body model.\n\nNotes:\n\
+                  \    Extensions beyond the base fields are permitted and will be\
+                  \ included\n    when present. The OpenAPI annotation uses this model\
+                  \ for all error\n    responses and declares the `application/problem+json`\
+                  \ media type."
+                example:
+                  detail: invalid point
+                  instance: /v1/oprf/evaluate
+                  status: 400
+                  title: Bad Request
+                  trace_id: abcd1234efef0000abcd1234efef0000
+                  type: about:blank
+                properties:
+                  detail:
+                    title: Detail
+                    type: string
+                  instance:
+                    title: Instance
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  title:
+                    title: Title
+                    type: string
+                  type:
+                    title: Type
+                    type: string
+                required:
+                - type
+                - title
+                - status
+                - detail
+                - instance
+                title: ProblemDetails
+                type: object
+          description: Precondition Required
+        '503':
+          content:
+            application/problem+json:
+              examples:
+                bucket_exceeds_pad:
+                  summary: Bucket exceeds pad target
+                  value:
+                    detail: bucket exceeds pad target
+                    instance: /v1/fhe/evaluate
+                    status: 503
+                    title: Service Unavailable
+                    type: urn:problem:fhe:bucket-exceeds-pad-target
+                fhe_unavailable:
+                  summary: FHE disabled or TenSEAL unavailable
+                  value:
+                    detail: fhe unavailable
+                    instance: /v1/fhe/evaluate
+                    status: 503
+                    title: Service Unavailable
+                    type: urn:problem:fhe:unavailable
+                upstream_unavailable:
+                  summary: Upstream unavailable
+                  value:
+                    detail: upstream unavailable
+                    instance: /v1/fhe/evaluate
+                    status: 503
+                    title: Service Unavailable
+                    type: urn:problem:fhe:upstream-unavailable
+              schema:
+                additionalProperties: true
+                description: "RFC 9457 Problem Details response body model.\n\nNotes:\n\
+                  \    Extensions beyond the base fields are permitted and will be\
+                  \ included\n    when present. The OpenAPI annotation uses this model\
+                  \ for all error\n    responses and declares the `application/problem+json`\
+                  \ media type."
+                example:
+                  detail: invalid point
+                  instance: /v1/oprf/evaluate
+                  status: 400
+                  title: Bad Request
+                  trace_id: abcd1234efef0000abcd1234efef0000
+                  type: about:blank
+                properties:
+                  detail:
+                    title: Detail
+                    type: string
+                  instance:
+                    title: Instance
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  title:
+                    title: Title
+                    type: string
+                  type:
+                    title: Type
+                    type: string
+                required:
+                - type
+                - title
+                - status
+                - detail
+                - instance
+                title: ProblemDetails
+                type: object
+          description: Service Unavailable
+      summary: Fhe Evaluate
+      tags:
+      - FHE
+  /v1/health:
+    get:
+      description: 'Fast liveness endpoint with no external dependencies.
+
+
+        Returns a minimal success payload and disables caching. This endpoint
+
+        should be used for container/process liveness checks and must not trigger
+
+        network calls or slow operations.'
+      operationId: health_v1_health_get
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthOut'
+          description: Successful Response
+      summary: Health
+      tags:
+      - Health
+  /v1/metadata:
+    get:
+      description: Return public metadata describing the cryptographic suite and API.
+      operationId: get_metadata_v1_metadata_get
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                additionalProperties: true
+                title: Response Get Metadata V1 Metadata Get
+                type: object
+          description: Successful Response
+        '304':
+          description: Not Modified
+        '400':
+          content:
+            application/problem+json:
+              schema:
+                additionalProperties: true
+                description: "RFC 9457 Problem Details response body model.\n\nNotes:\n\
+                  \    Extensions beyond the base fields are permitted and will be\
+                  \ included\n    when present. The OpenAPI annotation uses this model\
+                  \ for all error\n    responses and declares the `application/problem+json`\
+                  \ media type."
+                example:
+                  detail: invalid metadata document
+                  instance: /v1/metadata
+                  status: 400
+                  title: Bad Request
+                  trace_id: abcd1234efef0000abcd1234efef0000
+                  type: urn:problem:metadata:invalid
+                properties:
+                  detail:
+                    title: Detail
+                    type: string
+                  instance:
+                    title: Instance
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  title:
+                    title: Title
+                    type: string
+                  type:
+                    title: Type
+                    type: string
+                required:
+                - type
+                - title
+                - status
+                - detail
+                - instance
+                title: ProblemDetails
+                type: object
+          description: Bad Request
+        '503':
+          content:
+            application/problem+json:
+              schema:
+                additionalProperties: true
+                description: "RFC 9457 Problem Details response body model.\n\nNotes:\n\
+                  \    Extensions beyond the base fields are permitted and will be\
+                  \ included\n    when present. The OpenAPI annotation uses this model\
+                  \ for all error\n    responses and declares the `application/problem+json`\
+                  \ media type."
+                example:
+                  detail: metadata unavailable
+                  instance: /v1/metadata
+                  status: 503
+                  title: Service Unavailable
+                  trace_id: abcd1234efef0000abcd1234efef0000
+                  type: urn:problem:metadata:unavailable
+                properties:
+                  detail:
+                    title: Detail
+                    type: string
+                  instance:
+                    title: Instance
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  title:
+                    title: Title
+                    type: string
+                  type:
+                    title: Type
+                    type: string
+                required:
+                - type
+                - title
+                - status
+                - detail
+                - instance
+                title: ProblemDetails
+                type: object
+          description: Service Unavailable
+      summary: Get Metadata
+      tags:
+      - Metadata
+  /v1/ope-paillier/evaluate:
+    post:
+      description: Evaluate masked polynomial over the bucket indicated by the request.
+      operationId: ope_evaluate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OPEEvaluateRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              examples:
+                success:
+                  summary: Encrypted result
+                  value:
+                    ciphertext_b64: AQ
+              schema:
+                $ref: '#/components/schemas/OPEEvaluateResponse'
+          description: OK
+        '400':
+          content:
+            application/problem+json:
+              examples:
+                ciphertext_too_large:
+                  summary: Ciphertext too large by cap
+                  value:
+                    detail: ciphertext too large
+                    instance: /v1/ope-paillier/evaluate
+                    status: 400
+                    title: Bad Request
+                    type: urn:problem:ope:ciphertext-too-large
+                invalid_ciphertexts_or_modulus:
+                  summary: Decode/eval aggregate error
+                  value:
+                    detail: invalid ciphertexts or modulus
+                    instance: /v1/ope-paillier/evaluate
+                    status: 400
+                    title: Bad Request
+                    type: urn:problem:ope:invalid-ciphertexts-or-modulus
+                invalid_prefix:
+                  summary: Invalid bucket prefix
+                  value:
+                    detail: invalid hex prefix
+                    instance: /v1/ope-paillier/evaluate
+                    status: 400
+                    title: Bad Request
+                    type: urn:problem:ope:invalid-bucket-prefix
+                modulus_too_large:
+                  summary: Modulus too large by cap
+                  value:
+                    detail: modulus too large
+                    instance: /v1/ope-paillier/evaluate
+                    status: 400
+                    title: Bad Request
+                    type: urn:problem:ope:modulus-too-large
+                wrong_length:
+                  summary: Wrong ciphertext vector length
+                  value:
+                    detail: wrong vector length
+                    instance: /v1/ope-paillier/evaluate
+                    status: 400
+                    title: Bad Request
+                    type: urn:problem:ope:ciphertext-count-mismatch
+              schema:
+                additionalProperties: true
+                description: "RFC 9457 Problem Details response body model.\n\nNotes:\n\
+                  \    Extensions beyond the base fields are permitted and will be\
+                  \ included\n    when present. The OpenAPI annotation uses this model\
+                  \ for all error\n    responses and declares the `application/problem+json`\
+                  \ media type."
+                example:
+                  detail: invalid point
+                  instance: /v1/oprf/evaluate
+                  status: 400
+                  title: Bad Request
+                  trace_id: abcd1234efef0000abcd1234efef0000
+                  type: about:blank
+                properties:
+                  detail:
+                    title: Detail
+                    type: string
+                  instance:
+                    title: Instance
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  title:
+                    title: Title
+                    type: string
+                  type:
+                    title: Type
+                    type: string
+                required:
+                - type
+                - title
+                - status
+                - detail
+                - instance
+                title: ProblemDetails
+                type: object
+          description: Bad Request
+        '412':
+          content:
+            application/problem+json:
+              examples:
+                suite_id_mismatch:
+                  summary: X-Suite-Id mismatch
+                  value:
+                    detail: suite_id_mismatch
+                    instance: /v1/ope-paillier/evaluate
+                    status: 412
+                    title: Precondition Failed
+                    type: urn:problem:ope:suite-id-mismatch
+              schema:
+                additionalProperties: true
+                description: "RFC 9457 Problem Details response body model.\n\nNotes:\n\
+                  \    Extensions beyond the base fields are permitted and will be\
+                  \ included\n    when present. The OpenAPI annotation uses this model\
+                  \ for all error\n    responses and declares the `application/problem+json`\
+                  \ media type."
+                example:
+                  detail: invalid point
+                  instance: /v1/oprf/evaluate
+                  status: 400
+                  title: Bad Request
+                  trace_id: abcd1234efef0000abcd1234efef0000
+                  type: about:blank
+                properties:
+                  detail:
+                    title: Detail
+                    type: string
+                  instance:
+                    title: Instance
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  title:
+                    title: Title
+                    type: string
+                  type:
+                    title: Type
+                    type: string
+                required:
+                - type
+                - title
+                - status
+                - detail
+                - instance
+                title: ProblemDetails
+                type: object
+          description: Precondition Failed
+        '428':
+          content:
+            application/problem+json:
+              examples:
+                suite_id_required:
+                  summary: Missing X-Suite-Id
+                  value:
+                    detail: suite_id_required
+                    instance: /v1/ope-paillier/evaluate
+                    status: 428
+                    title: Precondition Required
+                    type: urn:problem:ope:suite-id-required
+              schema:
+                additionalProperties: true
+                description: "RFC 9457 Problem Details response body model.\n\nNotes:\n\
+                  \    Extensions beyond the base fields are permitted and will be\
+                  \ included\n    when present. The OpenAPI annotation uses this model\
+                  \ for all error\n    responses and declares the `application/problem+json`\
+                  \ media type."
+                example:
+                  detail: invalid point
+                  instance: /v1/oprf/evaluate
+                  status: 400
+                  title: Bad Request
+                  trace_id: abcd1234efef0000abcd1234efef0000
+                  type: about:blank
+                properties:
+                  detail:
+                    title: Detail
+                    type: string
+                  instance:
+                    title: Instance
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  title:
+                    title: Title
+                    type: string
+                  type:
+                    title: Type
+                    type: string
+                required:
+                - type
+                - title
+                - status
+                - detail
+                - instance
+                title: ProblemDetails
+                type: object
+          description: Precondition Required
+        '503':
+          content:
+            application/problem+json:
+              examples:
+                degree_cap:
+                  summary: Bucket exceeds degree cap
+                  value:
+                    detail: bucket exceeds degree cap
+                    instance: /v1/ope-paillier/evaluate
+                    status: 503
+                    title: Service Unavailable
+                    type: urn:problem:ope:bucket-exceeds-degree-cap
+                disabled:
+                  summary: OPE feature disabled
+                  value:
+                    detail: ope unavailable
+                    instance: /v1/ope-paillier/evaluate
+                    status: 503
+                    title: Service Unavailable
+                    type: urn:problem:ope:disabled
+                upstream_unavailable:
+                  summary: Upstream unavailable
+                  value:
+                    detail: upstream unavailable
+                    instance: /v1/ope-paillier/evaluate
+                    status: 503
+                    title: Service Unavailable
+                    type: urn:problem:ope:upstream-unavailable
+              schema:
+                additionalProperties: true
+                description: "RFC 9457 Problem Details response body model.\n\nNotes:\n\
+                  \    Extensions beyond the base fields are permitted and will be\
+                  \ included\n    when present. The OpenAPI annotation uses this model\
+                  \ for all error\n    responses and declares the `application/problem+json`\
+                  \ media type."
+                example:
+                  detail: invalid point
+                  instance: /v1/oprf/evaluate
+                  status: 400
+                  title: Bad Request
+                  trace_id: abcd1234efef0000abcd1234efef0000
+                  type: about:blank
+                properties:
+                  detail:
+                    title: Detail
+                    type: string
+                  instance:
+                    title: Instance
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  title:
+                    title: Title
+                    type: string
+                  type:
+                    title: Type
+                    type: string
+                required:
+                - type
+                - title
+                - status
+                - detail
+                - instance
+                title: ProblemDetails
+                type: object
+          description: Service Unavailable
+      summary: Ope Evaluate
+      tags:
+      - OPE-Paillier
+  /v1/oprf/evaluate:
+    post:
+      description: "Evaluate three blinded points and return compressed outputs.\n\
+        \nInputs are digest\u2011based:\n- ``B_sha1_p`` is a blind of ``H2C(SHA-1(password),\
+        \ DST for SHA-1 path)``\n- ``B_sha256_p`` is a blind of ``H2C(SHA-256(password),\
+        \ DST for SHA-256 path)``\n- ``B_sha256_up`` is a blind of ``H2C(SHA-256(username||password),\
+        \ DST for UP path)``\nThe two paths use distinct domain\u2011separation tags.\n\
+        \nEnforces the `X-Suite-Id` header precondition: missing \u2192 428, mismatch\
+        \ \u2192 412.\n\nFeature flags:\n- `ec_oprf` gates availability. When disabled,\
+        \ the endpoint returns 503\n  (`oprf unavailable`)."
+      operationId: oprf_evaluate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EvalIn'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              examples:
+                success:
+                  summary: Evaluated points (compressed hex)
+                  value:
+                    Yc_sha1: 02eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+                    Yc_sha256: 03cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+                    Yc_sha256_up: 02aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+              schema:
+                $ref: '#/components/schemas/EvalOut'
+          description: OK
+        '400':
+          content:
+            application/problem+json:
+              examples:
+                invalid_point:
+                  summary: Invalid point
+                  value:
+                    detail: invalid point
+                    instance: /v1/oprf/evaluate
+                    status: 400
+                    title: Bad Request
+                    type: urn:problem:oprf:invalid-point
+              schema:
+                additionalProperties: true
+                description: "RFC 9457 Problem Details response body model.\n\nNotes:\n\
+                  \    Extensions beyond the base fields are permitted and will be\
+                  \ included\n    when present. The OpenAPI annotation uses this model\
+                  \ for all error\n    responses and declares the `application/problem+json`\
+                  \ media type."
+                example:
+                  detail: invalid point
+                  instance: /v1/oprf/evaluate
+                  status: 400
+                  title: Bad Request
+                  trace_id: abcd1234efef0000abcd1234efef0000
+                  type: about:blank
+                properties:
+                  detail:
+                    title: Detail
+                    type: string
+                  instance:
+                    title: Instance
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  title:
+                    title: Title
+                    type: string
+                  type:
+                    title: Type
+                    type: string
+                required:
+                - type
+                - title
+                - status
+                - detail
+                - instance
+                title: ProblemDetails
+                type: object
+          description: Bad Request
+        '412':
+          content:
+            application/problem+json:
+              examples:
+                suite_id_mismatch:
+                  summary: X-Suite-Id mismatch
+                  value:
+                    detail: suite_id_mismatch
+                    instance: /v1/oprf/evaluate
+                    status: 412
+                    title: Precondition Failed
+                    type: urn:problem:oprf:suite-id-mismatch
+              schema:
+                additionalProperties: true
+                description: "RFC 9457 Problem Details response body model.\n\nNotes:\n\
+                  \    Extensions beyond the base fields are permitted and will be\
+                  \ included\n    when present. The OpenAPI annotation uses this model\
+                  \ for all error\n    responses and declares the `application/problem+json`\
+                  \ media type."
+                example:
+                  detail: invalid point
+                  instance: /v1/oprf/evaluate
+                  status: 400
+                  title: Bad Request
+                  trace_id: abcd1234efef0000abcd1234efef0000
+                  type: about:blank
+                properties:
+                  detail:
+                    title: Detail
+                    type: string
+                  instance:
+                    title: Instance
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  title:
+                    title: Title
+                    type: string
+                  type:
+                    title: Type
+                    type: string
+                required:
+                - type
+                - title
+                - status
+                - detail
+                - instance
+                title: ProblemDetails
+                type: object
+          description: Precondition Failed
+        '413':
+          content:
+            application/problem+json:
+              examples:
+                too_large:
+                  summary: Request body too large
+                  value:
+                    detail: request body too large
+                    instance: /v1/oprf/evaluate
+                    status: 413
+                    title: Payload Too Large
+                    type: about:blank
+              schema:
+                additionalProperties: true
+                description: "RFC 9457 Problem Details response body model.\n\nNotes:\n\
+                  \    Extensions beyond the base fields are permitted and will be\
+                  \ included\n    when present. The OpenAPI annotation uses this model\
+                  \ for all error\n    responses and declares the `application/problem+json`\
+                  \ media type."
+                example:
+                  detail: invalid point
+                  instance: /v1/oprf/evaluate
+                  status: 400
+                  title: Bad Request
+                  trace_id: abcd1234efef0000abcd1234efef0000
+                  type: about:blank
+                properties:
+                  detail:
+                    title: Detail
+                    type: string
+                  instance:
+                    title: Instance
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  title:
+                    title: Title
+                    type: string
+                  type:
+                    title: Type
+                    type: string
+                required:
+                - type
+                - title
+                - status
+                - detail
+                - instance
+                title: ProblemDetails
+                type: object
+          description: Payload Too Large
+        '415':
+          content:
+            application/problem+json:
+              examples:
+                not_json:
+                  summary: Content-Type must be application/json
+                  value:
+                    detail: content type must be application/json
+                    instance: /v1/oprf/evaluate
+                    status: 415
+                    title: Unsupported Media Type
+                    type: about:blank
+              schema:
+                additionalProperties: true
+                description: "RFC 9457 Problem Details response body model.\n\nNotes:\n\
+                  \    Extensions beyond the base fields are permitted and will be\
+                  \ included\n    when present. The OpenAPI annotation uses this model\
+                  \ for all error\n    responses and declares the `application/problem+json`\
+                  \ media type."
+                example:
+                  detail: invalid point
+                  instance: /v1/oprf/evaluate
+                  status: 400
+                  title: Bad Request
+                  trace_id: abcd1234efef0000abcd1234efef0000
+                  type: about:blank
+                properties:
+                  detail:
+                    title: Detail
+                    type: string
+                  instance:
+                    title: Instance
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  title:
+                    title: Title
+                    type: string
+                  type:
+                    title: Type
+                    type: string
+                required:
+                - type
+                - title
+                - status
+                - detail
+                - instance
+                title: ProblemDetails
+                type: object
+          description: Unsupported Media Type
+        '428':
+          content:
+            application/problem+json:
+              examples:
+                suite_id_required:
+                  summary: Missing X-Suite-Id
+                  value:
+                    detail: suite_id_required
+                    instance: /v1/oprf/evaluate
+                    status: 428
+                    title: Precondition Required
+                    type: urn:problem:oprf:suite-id-required
+              schema:
+                additionalProperties: true
+                description: "RFC 9457 Problem Details response body model.\n\nNotes:\n\
+                  \    Extensions beyond the base fields are permitted and will be\
+                  \ included\n    when present. The OpenAPI annotation uses this model\
+                  \ for all error\n    responses and declares the `application/problem+json`\
+                  \ media type."
+                example:
+                  detail: invalid point
+                  instance: /v1/oprf/evaluate
+                  status: 400
+                  title: Bad Request
+                  trace_id: abcd1234efef0000abcd1234efef0000
+                  type: about:blank
+                properties:
+                  detail:
+                    title: Detail
+                    type: string
+                  instance:
+                    title: Instance
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  title:
+                    title: Title
+                    type: string
+                  type:
+                    title: Type
+                    type: string
+                required:
+                - type
+                - title
+                - status
+                - detail
+                - instance
+                title: ProblemDetails
+                type: object
+          description: Precondition Required
+        '503':
+          content:
+            application/problem+json:
+              examples:
+                disabled:
+                  summary: OPRF feature disabled
+                  value:
+                    detail: oprf unavailable
+                    instance: /v1/oprf/evaluate
+                    status: 503
+                    title: Service Unavailable
+                    type: urn:problem:oprf:unavailable
+              schema:
+                additionalProperties: true
+                description: "RFC 9457 Problem Details response body model.\n\nNotes:\n\
+                  \    Extensions beyond the base fields are permitted and will be\
+                  \ included\n    when present. The OpenAPI annotation uses this model\
+                  \ for all error\n    responses and declares the `application/problem+json`\
+                  \ media type."
+                example:
+                  detail: invalid point
+                  instance: /v1/oprf/evaluate
+                  status: 400
+                  title: Bad Request
+                  trace_id: abcd1234efef0000abcd1234efef0000
+                  type: about:blank
+                properties:
+                  detail:
+                    title: Detail
+                    type: string
+                  instance:
+                    title: Instance
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  title:
+                    title: Title
+                    type: string
+                  type:
+                    title: Type
+                    type: string
+                required:
+                - type
+                - title
+                - status
+                - detail
+                - instance
+                title: ProblemDetails
+                type: object
+          description: Service Unavailable
+      summary: Oprf Evaluate
+      tags:
+      - OPRF
+  /v1/ready:
+    get:
+      description: 'Readiness endpoint that probes upstream dependencies with generic
+        failure.
+
+
+        On failure, responds with HTTP 503 and a generic detail string to avoid
+
+        leaking backend implementation details.'
+      operationId: ready_v1_ready_get
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthOut'
+          description: Successful Response
+        '503':
+          content:
+            application/problem+json:
+              schema:
+                additionalProperties: true
+                description: "RFC 9457 Problem Details response body model.\n\nNotes:\n\
+                  \    Extensions beyond the base fields are permitted and will be\
+                  \ included\n    when present. The OpenAPI annotation uses this model\
+                  \ for all error\n    responses and declares the `application/problem+json`\
+                  \ media type."
+                example:
+                  detail: invalid point
+                  instance: /v1/oprf/evaluate
+                  status: 400
+                  title: Bad Request
+                  trace_id: abcd1234efef0000abcd1234efef0000
+                  type: about:blank
+                properties:
+                  detail:
+                    title: Detail
+                    type: string
+                  instance:
+                    title: Instance
+                    type: string
+                  status:
+                    title: Status
+                    type: integer
+                  title:
+                    title: Title
+                    type: string
+                  type:
+                    title: Type
+                    type: string
+                required:
+                - type
+                - title
+                - status
+                - detail
+                - instance
+                title: ProblemDetails
+                type: object
+          description: Service Unavailable
+      summary: Ready
+      tags:
+      - Health
+tags:
+- description: Liveness and readiness probes
+  name: Health
+- description: Blind evaluation of points
+  name: OPRF
+- description: Encrypted bucket queries
+  name: Buckets
+- description: Homomorphic membership checks (BFV)
+  name: FHE
+- description: Paillier-based oblivious polynomial evaluation
+  name: OPE-Paillier
+- description: Public parameters and suite info
+  name: Metadata

@@ -14,3 +14,15 @@ specs:
       - "HopMAC"
       - "RFC9861"
 
+  - id: "sdd.crypto.password-breach.ec-oprf-fhe-c3"
+    version: "1.0.0"
+    path: "specs/protocols/crypto/ec-oprf-fhe-c3"
+    status: "draft"
+    domain: "crypto"
+    origin: "first-party"
+    tags:
+      - "EC-OPRF"
+      - "FHE"
+      - "password-breach-check"
+      - "HTTP"
+

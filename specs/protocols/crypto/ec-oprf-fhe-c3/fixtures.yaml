@@ -1,0 +1,295 @@
+FixtureBundle:
+  id: ec-oprf-fhe-c3-fixtures-shapes
+  version: "1.0.0"
+  schema_version: 1
+  description: HTTP-shape-only fixtures for ec-oprf-fhe-c3; not cryptographically normative.
+
+---
+fixtures:
+  - id: FX-OPRF-001
+    role: http-shape-only
+    normative: false
+    description: Example EC-OPRF evaluate HTTP exchange with three blinded points.
+    profiles: [oprf-only, oprf-plus-fhe]
+    endpoint:
+      method: POST
+      path: /v1/oprf/evaluate
+    request:
+      headers:
+        X-Suite-Id: Z3JhY2VmdWxseS1mYWtlLXN1aXRlLWlk
+        Content-Type: application/json
+      body:
+        B_sha1_p: 0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
+        B_sha256_p: 03c6047f9441ed7d6d3045406e95c07cd85a6e1e740d95bcd7f2c4a95f5d7e1e3c
+        B_sha256_up: 02f9308a019258c310c8d90f3b0d4ee8d5c2e5f9f89a3b6c7e5a0b4c5d6e7f8a9
+    response:
+      status: 200
+      headers:
+        Content-Type: application/json
+      body:
+        Yc_sha1: 03b7e151628aed2a6abf7158809cf4f3c762e7160f38b4da56a784d9045190cfe3
+        Yc_sha256: 02c49d360886e704936a30d1c4c2d5b7e5a0b4c5d6e7f8a9b0c1d2e3f405162738
+        Yc_sha256_up: 0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
+
+  - id: FX-BKT-001
+    role: http-shape-only
+    normative: false
+    description: Example bucket response with three encrypted entries.
+    profiles: [oprf-only, oprf-plus-fhe]
+    endpoint:
+      method: GET
+      path: /v1/buckets
+    request:
+      query:
+        sha1: "00123"
+        sha256: "00abc"
+        sha256_up: "0ff01"
+      headers:
+        X-Suite-Id: Z3JhY2VmdWxseS1mYWtlLXN1aXRlLWlk
+    response:
+      status: 200
+      headers:
+        Content-Type: application/json
+        Cache-Control: public, max-age=600
+        ETag: '"W/"bucket-etag-example""'
+        Vary: X-Suite-Id
+      body:
+        entries:
+          - 00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff0011223344556677
+          - ffeeddccbbaa99887766554433221100ffeeddccbbaa99887766554433221100ffeeddccbbaa9988
+          - 11223344556677889900aabbccddeeff11223344556677889900aabbccddeeff1122334455667788
+
+  - id: FX-FHE-001
+    role: http-shape-only
+    normative: false
+    description: Example FHE BFV evaluate HTTP exchange.
+    profiles: [oprf-plus-fhe]
+    endpoint:
+      method: POST
+      path: /v1/fhe/evaluate
+    request:
+      headers:
+        X-Suite-Id: Z3JhY2VmdWxseS1mYWtlLXN1aXRlLWlk
+        Content-Type: application/json
+      body:
+        hash_algorithm: sha256
+        bucket_prefix_hex: "00abc"
+        context_b64: Q29udGV4dEhhc2VCb2R5LWV4YW1wbGUtYmFzZTY0dXJs
+        ciphertext_b64: Q2lwaGVydGV4dEhhc2VCb2R5LWV4YW1wbGUtYmFzZTY0dXJs
+    response:
+      status: 200
+      headers:
+        Content-Type: application/json
+      body:
+        ciphertext_b64: UmVzdWx0Q2lwaGVydGV4dEhhc2UtZXhhbXBsZS1iYXNlNjR1cmw
+
+  - id: FX-OPRF-ERR-SUITE-ID-REQUIRED
+    role: http-shape-only
+    normative: false
+    description: Example 428 Problem Details when X-Suite-Id is missing on OPRF evaluate.
+    profiles: [oprf-only, oprf-plus-fhe]
+    endpoint:
+      method: POST
+      path: /v1/oprf/evaluate
+    request:
+      headers:
+        Content-Type: application/json
+      body:
+        B_sha1_p: 0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798
+    response:
+      status: 428
+      headers:
+        Content-Type: application/problem+json
+      body:
+        type: urn:problem:precondition:suite-id-required
+        title: Precondition Required
+        status: 428
+        detail: suite_id_required
+        instance: /v1/oprf/evaluate
+        trace_id: 00000000000000000000000000000000
+
+  - id: FX-BKT-ERR-INVALID-PREFIX
+    role: http-shape-only
+    normative: false
+    description: Example 400 Problem Details for an invalid bucket prefix.
+    profiles: [oprf-only, oprf-plus-fhe]
+    endpoint:
+      method: GET
+      path: /v1/buckets
+    request:
+      query:
+        sha1: "xyz"       # wrong length / non-hex
+        sha256: "00abc"
+        sha256_up: "0ff01"
+      headers:
+        X-Suite-Id: Z3JhY2VmdWxseS1mYWtlLXN1aXRlLWlk
+    response:
+      status: 400
+      headers:
+        Content-Type: application/problem+json
+      body:
+        type: urn:problem:buckets:invalid-prefix
+        title: Bad Request
+        status: 400
+        detail: invalid prefix
+        instance: /v1/buckets
+        trace_id: 00000000000000000000000000000000
+
+  - id: FX-BKT-ERR-EXCEEDS-PAD
+    role: http-shape-only
+    normative: false
+    description: Example 503 Problem Details when a bucket exceeds the configured pad_to limit.
+    profiles: [oprf-only, oprf-plus-fhe]
+    endpoint:
+      method: GET
+      path: /v1/buckets
+    request:
+      query:
+        sha1: "00123"
+        sha256: "00abc"
+        sha256_up: "0ff01"
+      headers:
+        X-Suite-Id: Z3JhY2VmdWxseS1mYWtlLXN1aXRlLWlk
+    response:
+      status: 503
+      headers:
+        Content-Type: application/problem+json
+      body:
+        type: urn:problem:buckets:exceeds-pad-target
+        title: Service Unavailable
+        status: 503
+        detail: bucket exceeds pad_to limit
+        instance: /v1/buckets
+        trace_id: 00000000000000000000000000000000
+
+  - id: FX-FHE-ERR-UNAVAILABLE
+    role: http-shape-only
+    normative: false
+    description: Example 503 Problem Details when the FHE feature is disabled or unavailable.
+    profiles: [oprf-plus-fhe]
+    endpoint:
+      method: POST
+      path: /v1/fhe/evaluate
+    request:
+      headers:
+        X-Suite-Id: Z3JhY2VmdWxseS1mYWtlLXN1aXRlLWlk
+        Content-Type: application/json
+      body:
+        hash_algorithm: sha256
+        bucket_prefix_hex: "00abc"
+        context_b64: Q29udGV4dEhhc2VCb2R5LWV4YW1wbGUtYmFzZTY0dXJs
+        ciphertext_b64: Q2lwaGVydGV4dEhhc2VCb2R5LWV4YW1wbGUtYmFzZTY0dXJs
+    response:
+      status: 503
+      headers:
+        Content-Type: application/problem+json
+      body:
+        type: urn:problem:fhe:unavailable
+        title: Service Unavailable
+        status: 503
+        detail: fhe unavailable
+        instance: /v1/fhe/evaluate
+        trace_id: 00000000000000000000000000000000
+
+  - id: FX-FHE-ERR-INVALID-CONTEXT
+    role: http-shape-only
+    normative: false
+    description: Example 400 Problem Details for an invalid BFV context payload.
+    profiles: [oprf-plus-fhe]
+    endpoint:
+      method: POST
+      path: /v1/fhe/evaluate
+    request:
+      headers:
+        X-Suite-Id: Z3JhY2VmdWxseS1mYWtlLXN1aXRlLWlk
+        Content-Type: application/json
+      body:
+        hash_algorithm: sha256
+        bucket_prefix_hex: "00abc"
+        context_b64: SW52YWxpZENvbnRleHQtYmFzZTY0
+        ciphertext_b64: Q2lwaGVydGV4dEhhc2VCb2R5LWV4YW1wbGUtYmFzZTY0dXJs
+    response:
+      status: 400
+      headers:
+        Content-Type: application/problem+json
+      body:
+        type: urn:problem:fhe:invalid-context
+        title: Bad Request
+        status: 400
+        detail: invalid BFV context
+        instance: /v1/fhe/evaluate
+        trace_id: 00000000000000000000000000000000
+
+  - id: FX-RATE-LIMIT-ERR-429
+    role: http-shape-only
+    normative: false
+    description: Example 429 Problem Details for rate limiting with Retry-After.
+    profiles: [oprf-only, oprf-plus-fhe]
+    endpoint:
+      method: GET
+      path: /v1/buckets
+    request:
+      query:
+        sha1: "00123"
+        sha256: "00abc"
+        sha256_up: "0ff01"
+      headers:
+        X-Suite-Id: Z3JhY2VmdWxseS1mYWtlLXN1aXRlLWlk
+    response:
+      status: 429
+      headers:
+        Content-Type: application/problem+json
+        Retry-After: "5"
+      body:
+        type: urn:problem:rate-limit
+        title: Too Many Requests
+        status: 429
+        detail: rate limit exceeded
+        instance: /v1/buckets
+        trace_id: 00000000000000000000000000000000
+
+  - id: FX-META-ERR-INVALID
+    role: http-shape-only
+    normative: false
+    description: Example 400 Problem Details for malformed /v1/metadata (invalid/missing fields).
+    profiles: [oprf-only, oprf-plus-fhe]
+    endpoint:
+      method: GET
+      path: /v1/metadata
+    request:
+      headers:
+        Accept: application/json
+    response:
+      status: 400
+      headers:
+        Content-Type: application/problem+json
+      body:
+        type: urn:problem:metadata:invalid
+        title: Bad Request
+        status: 400
+        detail: invalid metadata document
+        instance: /v1/metadata
+        trace_id: 00000000000000000000000000000000
+
+  - id: FX-META-ERR-UNAVAILABLE
+    role: http-shape-only
+    normative: false
+    description: Example 503 Problem Details for /v1/metadata being temporarily unavailable.
+    profiles: [oprf-only, oprf-plus-fhe]
+    endpoint:
+      method: GET
+      path: /v1/metadata
+    request:
+      headers:
+        Accept: application/json
+    response:
+      status: 503
+      headers:
+        Content-Type: application/problem+json
+      body:
+        type: urn:problem:metadata:unavailable
+        title: Service Unavailable
+        status: 503
+        detail: metadata unavailable
+        instance: /v1/metadata
+        trace_id: 00000000000000000000000000000000

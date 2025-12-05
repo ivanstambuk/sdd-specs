@@ -1,0 +1,149 @@
+unit_id: ec-oprf-fhe-c3
+namespace: c3/ec-oprf-fhe
+version: 1.0.0
+status: draft
+
+conformance_classes:
+  - id: server-oprf-only
+    description: HTTP server implementation that satisfies the oprf-only profile. Conformance tests are expected to cover both successful OPRF/bucket flows and error behaviors including missing or mismatched X-Suite-Id, invalid bucket prefixes, pad_to overflow, metadata invalid/unavailable responses, and rate limiting as exercised by the referenced fixtures.
+    profiles:
+      - oprf-only
+    requirements:
+      - id: REQ-SRV-OPRF-HTTP
+        text: Server MUST expose POST /v1/oprf/evaluate and GET/HEAD /v1/buckets as specified in spec.md.
+        covers:
+          - FR-OPRF-API-001
+          - FR-BUCKETS-API-001
+          - NFR-OPRF-CONSTANT-TIME-001
+          - NFR-RATE-LIMIT-001
+          - NFR-LOGGING-PRIVACY-001
+          - NFR-RESILIENCE-5XX-001
+      - id: REQ-SRV-OPRF-METADATA
+        text: Server MUST expose GET /v1/metadata with fields required to configure EC-OPRF and bucket parameters.
+        covers:
+          - FR-METADATA-001
+      - id: REQ-SRV-OPRF-BUCKETS
+        text: Server MUST enforce k-anonymous bucket prefixes and bucket padding limits.
+        covers:
+          - FR-BUCKETS-API-001
+    fixture_shapes:
+      - FX-OPRF-001
+      - FX-BKT-001
+      - FX-OPRF-ERR-SUITE-ID-REQUIRED
+      - FX-BKT-ERR-INVALID-PREFIX
+      - FX-BKT-ERR-EXCEEDS-PAD
+      - FX-RATE-LIMIT-ERR-429
+      - FX-META-ERR-INVALID
+      - FX-META-ERR-UNAVAILABLE
+    external_test_suites:
+      - RFC9380-H2C-P256
+      - RFC9497-OPRF-P256-SHA256
+
+  - id: server-oprf-plus-fhe
+    description: HTTP server implementation that satisfies the oprf-plus-fhe profile. Conformance tests are expected to cover successful OPRF, bucket, and FHE flows as well as error behaviors including missing or mismatched X-Suite-Id, invalid prefixes, pad_to overflow, metadata invalid/unavailable responses, FHE unavailability or invalid contexts, and rate limiting as exercised by the referenced fixtures.
+    profiles:
+      - oprf-plus-fhe
+    requirements:
+      - id: REQ-SRV-FHE-HTTP
+        text: Server MUST additionally expose POST /v1/fhe/evaluate as specified in spec.md.
+        covers:
+          - FR-FHE-API-001
+      - id: REQ-SRV-FHE-PARAMS
+        text: Server MUST validate BFV parameters and field sizes as described in spec.md.
+        covers:
+          - FR-FHE-API-001
+          - NFR-CONSTANT-WORK-001
+          - NFR-RATE-LIMIT-001
+          - NFR-LOGGING-PRIVACY-001
+          - NFR-RESILIENCE-5XX-001
+    fixture_shapes:
+      - FX-OPRF-001
+      - FX-BKT-001
+      - FX-FHE-001
+      - FX-OPRF-ERR-SUITE-ID-REQUIRED
+      - FX-BKT-ERR-INVALID-PREFIX
+      - FX-BKT-ERR-EXCEEDS-PAD
+      - FX-FHE-ERR-UNAVAILABLE
+      - FX-FHE-ERR-INVALID-CONTEXT
+      - FX-RATE-LIMIT-ERR-429
+      - FX-META-ERR-INVALID
+      - FX-META-ERR-UNAVAILABLE
+    external_test_suites:
+      - RFC9380-H2C-P256
+      - RFC9497-OPRF-P256-SHA256
+
+  - id: client-oprf-only
+    description: Client implementation that consumes metadata and performs EC-OPRF + bucket-based checks. Conformance tests are expected to verify that clients handle both happy-path responses and error scenarios (428/412, invalid prefixes, pad_to overflow, metadata invalid/unavailable, and 429 rate limiting) according to the profile.
+    profiles:
+      - oprf-only
+    requirements:
+      - id: REQ-CLI-OPRF-METADATA
+        text: Client MUST fetch /v1/metadata, validate metadata against the profiled invariants, and derive EC-OPRF and bucket parameters from metadata; malformed or inconsistent metadata MUST cause the client to abort rather than proceed with evaluate or bucket requests.
+        covers:
+          - FR-METADATA-001
+          - NFR-SUITE-BINDING-001
+          - NFR-METADATA-GUARD-001
+      - id: REQ-CLI-OPRF-BLINDING
+        text: Client MUST construct blinded points and unblind outputs according to the EC-OPRF requirements.
+        covers:
+          - FR-OPRF-API-001
+      - id: REQ-CLI-OPRF-BUCKET-DEC
+        text: Client MUST perform local decryption and comparison of bucket entries using OPRF-derived keys and the canonical matching rule defined by the profile (compare decrypted plaintexts to SHA-256(entry_label || digest) as per REQ-CLI-BUCKET-MATCH-001).
+        covers:
+          - FR-BUCKETS-API-001
+      - id: REQ-CLI-OPRF-ERRORS
+        text: Client MUST include X-Suite-Id on evaluate and bucket requests, retry at most once after refetching metadata on 428/412 responses, and treat 429 and 5xx responses as transient errors rather than definitive \"not breached\" results.
+        covers:
+          - NFR-SUITE-BINDING-001
+          - NFR-RATE-LIMIT-001
+          - NFR-RESILIENCE-5XX-001
+    fixture_shapes:
+      - FX-OPRF-001
+      - FX-BKT-001
+      - FX-OPRF-ERR-SUITE-ID-REQUIRED
+      - FX-BKT-ERR-INVALID-PREFIX
+      - FX-BKT-ERR-EXCEEDS-PAD
+      - FX-RATE-LIMIT-ERR-429
+      - FX-META-ERR-INVALID
+      - FX-META-ERR-UNAVAILABLE
+
+  - id: client-oprf-plus-fhe
+    description: Client implementation that can use both EC-OPRF and BFV FHE paths. Conformance tests are expected to verify handling of both happy-path flows and error scenarios for OPRF, buckets, FHE, and metadata (428/412, invalid prefixes, pad_to overflow, metadata invalid/unavailable, FHE unavailable/invalid context, and 429 rate limiting) according to the profile.
+    profiles:
+      - oprf-plus-fhe
+    requirements:
+      - id: REQ-CLI-FHE-METADATA
+        text: Client MUST validate FHE BFV parameter metadata and construct contexts accordingly, using the same metadata guard behavior as for EC-OPRF (abort on malformed or inconsistent metadata).
+        covers:
+          - FR-FHE-API-001
+          - NFR-OPAQUE-CIPHERTEXT-001
+          - NFR-METADATA-GUARD-001
+      - id: REQ-CLI-FHE-FLOW
+        text: Client MUST encrypt digests, send /v1/fhe/evaluate requests, and interpret decrypted results as match vs non-match.
+        covers:
+          - FR-FHE-API-001
+          - NFR-CONSTANT-WORK-001
+      - id: REQ-CLI-FHE-ERRORS
+        text: Client MUST include X-Suite-Id on FHE evaluate requests, retry at most once after refetching metadata on 428/412 responses, and treat 429 and 5xx responses from the FHE endpoint as transient errors.
+        covers:
+          - NFR-SUITE-BINDING-001
+          - NFR-RATE-LIMIT-001
+          - NFR-RESILIENCE-5XX-001
+    fixture_shapes:
+      - FX-OPRF-001
+      - FX-BKT-001
+      - FX-FHE-001
+      - FX-OPRF-ERR-SUITE-ID-REQUIRED
+      - FX-BKT-ERR-INVALID-PREFIX
+      - FX-BKT-ERR-EXCEEDS-PAD
+      - FX-FHE-ERR-UNAVAILABLE
+      - FX-FHE-ERR-INVALID-CONTEXT
+      - FX-RATE-LIMIT-ERR-429
+      - FX-META-ERR-INVALID
+      - FX-META-ERR-UNAVAILABLE
+
+verification:
+  guidance: |
+    Implementations SHOULD provide automated tests for EC-OPRF, bucket handling, and FHE flows using the fixtures
+    defined in spec.md. Servers SHOULD expose non-production endpoints or scripts that allow running the published
+    test fixtures end-to-end.
