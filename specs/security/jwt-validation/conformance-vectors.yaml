@@ -1,0 +1,436 @@
+metadata:
+  spec: "sdd.security.jwt.validation@0.1.0"
+  description: "Normative conformance vectors for JWT Validation."
+  notes:
+    - "These vectors are normative for conformance plans in conformance.yaml."
+    - "Tokens are concrete JWT compact strings signed with static test keys, not schematic placeholders."
+
+clock:
+  default_now_epoch_seconds: 1735686000 # 2025-01-01T00:00:00Z
+
+key_material_sets:
+  - id: "hs256-static-1"
+    description: "Static HS256 keyset for JWT Validation conformance vectors."
+    static_jwks:
+      keys:
+        - kty: "oct"
+          kid: "hs256-static-1"
+          alg: "HS256"
+          k: "and0LXZhbGlkYXRpb24tdGVzdC1rZXktMQ"
+  - id: "hs256-static-ambiguous"
+    description: "Static HS256 keyset with ambiguous kid for testing indeterminate outcomes."
+    static_jwks:
+      keys:
+        - kty: "oct"
+          kid: "ambiguous-key-id"
+          alg: "HS256"
+          k: "and0LXZhbGlkYXRpb24tdGVzdC1rZXktMQ"
+        - kty: "oct"
+          kid: "ambiguous-key-id"
+          alg: "HS256"
+          k: "and0LXZhbGlkYXRpb24tdGVzdC1rZXktMg"
+
+vectors:
+  - id: "jwt-valid-basic"
+    description: "A syntactically valid, signed JWT whose claims satisfy a simple validation policy."
+    inputs:
+      jwt_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsiZXhhbXBsZS1jbGllbnQiXSwiZXhwIjoxNzM1NzcyNDAwLCJpYXQiOjE3MzU2ODI0MDAsImlzcyI6Imh0dHBzOi8vaXNzdWVyLmV4YW1wbGUudGVzdCIsInN1YiI6InVzZXItMTIzIn0.pVcDLzYm44lBO-C6MxbUCnKsV000McKpgLu3oo5iDek"
+      validation_policy:
+        algorithms:
+          allowed: ["HS256"]
+        clock:
+          now_epoch_seconds: 1735686000
+          leeway_seconds: 0
+        expected_audience: ["example-client"]
+        expected_issuer: "https://issuer.example.test"
+      key_material:
+        key_set_id: "hs256-static-1"
+    expected:
+      validation_result:
+        status: "valid"
+        reason_codes: []
+
+  - id: "jwt-expired"
+    description: "A JWT that is well-formed and correctly signed but fails validation because exp is in the past."
+    inputs:
+      jwt_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsiZXhhbXBsZS1jbGllbnQiXSwiZXhwIjoxNzM1NjgyNDAwLCJpYXQiOjE3MzU2ODI0MDAsImlzcyI6Imh0dHBzOi8vaXNzdWVyLmV4YW1wbGUudGVzdCIsInN1YiI6InVzZXItMTIzIn0.5LNggkZ_1q-asC9pdSCa1NyGe2E5dXsIxD-Tsu-CJDw"
+      validation_policy:
+        algorithms:
+          allowed: ["HS256"]
+        clock:
+          now_epoch_seconds: 1735686000
+          leeway_seconds: 0
+        expected_audience: ["example-client"]
+        expected_issuer: "https://issuer.example.test"
+      key_material:
+        key_set_id: "hs256-static-1"
+    expected:
+      validation_result:
+        status: "rejected-expired"
+        reason_codes: ["expired"]
+
+  - id: "jwt-not-yet-valid"
+    description: "A JWT that is structurally valid and correctly signed but not yet valid according to nbf/iat checks."
+    inputs:
+      jwt_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsiZXhhbXBsZS1jbGllbnQiXSwiZXhwIjoxNzM1NzcyNDAwLCJpYXQiOjE3MzU2ODYwMDAsImlzcyI6Imh0dHBzOi8vaXNzdWVyLmV4YW1wbGUudGVzdCIsIm5iZiI6MTczNTY4OTYwMCwic3ViIjoidXNlci0xMjMifQ.tYqpCq6O1-tbxHvso6C6c-Q-2YPMJi_aTyCL859Gs1k"
+      validation_policy:
+        algorithms:
+          allowed: ["HS256"]
+        clock:
+          now_epoch_seconds: 1735686000
+          leeway_seconds: 0
+        expected_audience: ["example-client"]
+        expected_issuer: "https://issuer.example.test"
+      key_material:
+        key_set_id: "hs256-static-1"
+    expected:
+      validation_result:
+        status: "rejected-not-yet-valid"
+        reason_codes: ["not-yet-valid"]
+
+  - id: "jwt-invalid-signature"
+    description: "A JWT whose header and claims are structurally valid but whose signature or MAC does not verify under the provided keys."
+    inputs:
+      jwt_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsiZXhhbXBsZS1jbGllbnQiXSwiZXhwIjoxNzM1NzcyNDAwLCJpYXQiOjE3MzU2ODI0MDAsImlzcyI6Imh0dHBzOi8vaXNzdWVyLmV4YW1wbGUudGVzdCIsInN1YiI6InVzZXItMTIzIn0.hlX25Bxi2cEj1eNUuBcFXtutMJXQghj3mD3zK618A1c"
+      validation_policy:
+        algorithms:
+          allowed: ["HS256"]
+        clock:
+          now_epoch_seconds: 1735686000
+          leeway_seconds: 0
+        expected_audience: ["example-client"]
+        expected_issuer: "https://issuer.example.test"
+      key_material:
+        key_set_id: "hs256-static-1"
+    expected:
+      validation_result:
+        status: "rejected-signature"
+        reason_codes: ["signature-verification-failed"]
+
+  - id: "jwt-wrong-audience"
+    description: "A JWT that is structurally valid and correctly signed but whose aud claim does not satisfy the validation policy."
+    inputs:
+      jwt_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsib3RoZXItY2xpZW50Il0sImV4cCI6MTczNTc3MjQwMCwiaWF0IjoxNzM1NjgyNDAwLCJpc3MiOiJodHRwczovL2lzc3Vlci5leGFtcGxlLnRlc3QiLCJzdWIiOiJ1c2VyLTEyMyJ9._sJ8uGeSfwDsNE1uTAnINrgKd0n1eUS39erHLUXXL7k"
+      validation_policy:
+        algorithms:
+          allowed: ["HS256"]
+        clock:
+          now_epoch_seconds: 1735686000
+          leeway_seconds: 0
+        expected_audience: ["example-client"]
+        expected_issuer: "https://issuer.example.test"
+      key_material:
+        key_set_id: "hs256-static-1"
+    expected:
+      validation_result:
+        status: "rejected-audience"
+        reason_codes: ["audience-mismatch"]
+
+  - id: "jwt-malformed"
+    description: "An input that is not a syntactically valid JWT in compact serialization (for example, wrong number of segments)."
+    inputs:
+      jwt_token: "not.a.jwt"
+      validation_policy:
+        algorithms:
+          allowed: ["HS256"]
+        clock:
+          now_epoch_seconds: 1735686000
+          leeway_seconds: 0
+      key_material:
+        key_set_id: "hs256-static-1"
+    expected:
+      validation_result:
+        status: "rejected-malformed"
+        reason_codes: ["malformed"]
+
+  - id: "jwt-claims-on-failure-allowed"
+    description: "A JWT that fails validation but where the caller has enabled validation_policy.claims.allow_on_failure so that tagged claims are still returned via a diagnostics-only claims surface."
+    inputs:
+      jwt_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsiZXhhbXBsZS1jbGllbnQiXSwiZXhwIjoxNzM1NjgyNDAwLCJpYXQiOjE3MzU2ODI0MDAsImlzcyI6Imh0dHBzOi8vaXNzdWVyLmV4YW1wbGUudGVzdCIsInN1YiI6InVzZXItMTIzIn0.5LNggkZ_1q-asC9pdSCa1NyGe2E5dXsIxD-Tsu-CJDw"
+      validation_policy:
+        algorithms:
+          allowed: ["HS256"]
+        clock:
+          now_epoch_seconds: 1735686000
+          leeway_seconds: 0
+        expected_audience: ["example-client"]
+        expected_issuer: "https://issuer.example.test"
+        claims:
+          allow_on_failure: true
+      key_material:
+        key_set_id: "hs256-static-1"
+    expected:
+      validation_result:
+        status: "rejected-expired"
+        reason_codes: ["expired"]
+
+  - id: "jwt-claims-on-failure-disallowed"
+    description: "A JWT that fails validation and where validation_policy.claims.allow_on_failure is false or absent, so claims_view is empty or omitted even though the implementation may log the token locally."
+    inputs:
+      jwt_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsiZXhhbXBsZS1jbGllbnQiXSwiZXhwIjoxNzM1NjgyNDAwLCJpYXQiOjE3MzU2ODI0MDAsImlzcyI6Imh0dHBzOi8vaXNzdWVyLmV4YW1wbGUudGVzdCIsInN1YiI6InVzZXItMTIzIn0.5LNggkZ_1q-asC9pdSCa1NyGe2E5dXsIxD-Tsu-CJDw"
+      validation_policy:
+        algorithms:
+          allowed: ["HS256"]
+        clock:
+          now_epoch_seconds: 1735686000
+          leeway_seconds: 0
+        expected_audience: ["example-client"]
+        expected_issuer: "https://issuer.example.test"
+        claims:
+          allow_on_failure: false
+      key_material:
+        key_set_id: "hs256-static-1"
+    expected:
+      validation_result:
+        status: "rejected-expired"
+        reason_codes: ["expired"]
+
+  - id: "jwt-kid-not-found"
+    description: "A JWT whose header.kid does not match any key in key_material, leading to an indeterminate outcome."
+    inputs:
+      jwt_token: "eyJhbGciOiJIUzI1NiIsImtpZCI6InVua25vd24ta2V5LWlkIiwidHlwIjoiSldUIn0.eyJhdWQiOlsiZXhhbXBsZS1jbGllbnQiXSwiZXhwIjoxNzM1NzcyNDAwLCJpYXQiOjE3MzU2ODI0MDAsImlzcyI6Imh0dHBzOi8vaXNzdWVyLmV4YW1wbGUudGVzdCIsInN1YiI6InVzZXItMTIzIn0.67pelqNdVq_0dAJu7yoUd14c9IuZZym0gUSj3oMvmlk"
+      validation_policy:
+        algorithms:
+          allowed: ["HS256"]
+        clock:
+          now_epoch_seconds: 1735686000
+          leeway_seconds: 0
+        expected_audience: ["example-client"]
+        expected_issuer: "https://issuer.example.test"
+      key_material:
+        key_set_id: "hs256-static-1"
+    expected:
+      validation_result:
+        status: "indeterminate"
+        reason_codes: ["kid-not-found"]
+
+  - id: "jwt-kid-ambiguous"
+    description: "A JWT whose header.kid maps ambiguously to multiple keys in key_material, yielding an indeterminate result."
+    inputs:
+      jwt_token: "eyJhbGciOiJIUzI1NiIsImtpZCI6ImFtYmlndW91cy1rZXktaWQiLCJ0eXAiOiJKV1QifQ.eyJhdWQiOlsiZXhhbXBsZS1jbGllbnQiXSwiZXhwIjoxNzM1NzcyNDAwLCJpYXQiOjE3MzU2ODI0MDAsImlzcyI6Imh0dHBzOi8vaXNzdWVyLmV4YW1wbGUudGVzdCIsInN1YiI6InVzZXItMTIzIn0.tkau9RH-RoOiYYmPJz9UrSh3WBYEAqO4SaVzKVFDAEM"
+      validation_policy:
+        algorithms:
+          allowed: ["HS256"]
+        clock:
+          now_epoch_seconds: 1735686000
+          leeway_seconds: 0
+        expected_audience: ["example-client"]
+        expected_issuer: "https://issuer.example.test"
+      key_material:
+        key_set_id: "hs256-static-ambiguous"
+    expected:
+      validation_result:
+        status: "indeterminate"
+        reason_codes: ["kid-ambiguous"]
+
+  - id: "jwt-wrong-issuer"
+    description: "A JWT that is structurally valid and correctly signed but whose iss claim does not satisfy the validation policy."
+    inputs:
+      jwt_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsiZXhhbXBsZS1jbGllbnQiXSwiZXhwIjoxNzM1NzcyNDAwLCJpYXQiOjE3MzU2ODI0MDAsImlzcyI6Imh0dHBzOi8vb3RoZXItaXNzdWVyLmV4YW1wbGUudGVzdCIsInN1YiI6InVzZXItMTIzIn0.0qj_fAFvdj152BwjF36VNar0TmVn52v7fzYPD2OSisw"
+      validation_policy:
+        algorithms:
+          allowed: ["HS256"]
+        clock:
+          now_epoch_seconds: 1735686000
+          leeway_seconds: 0
+        expected_audience: ["example-client"]
+        expected_issuer: "https://issuer.example.test"
+      key_material:
+        key_set_id: "hs256-static-1"
+    expected:
+      validation_result:
+        status: "rejected-issuer"
+        reason_codes: ["issuer-mismatch"]
+
+  - id: "jwt-exp-boundary-eq-now"
+    description: "A JWT whose exp is exactly equal to the validation clock instant with zero leeway, treated as expired under the spec's fail-closed inequality."
+    inputs:
+      jwt_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsiZXhhbXBsZS1jbGllbnQiXSwiZXhwIjoxNzM1Njg2MDAwLCJpYXQiOjE3MzU2ODI0MDAsImlzcyI6Imh0dHBzOi8vaXNzdWVyLmV4YW1wbGUudGVzdCIsInN1YiI6InVzZXItMTIzIn0.TvCp6iKFiBoTxSQuu5TGGHiHcMLiB_TWeAQZ15YYP1M"
+      validation_policy:
+        algorithms:
+          allowed: ["HS256"]
+        clock:
+          now_epoch_seconds: 1735686000
+          leeway_seconds: 0
+        expected_audience: ["example-client"]
+        expected_issuer: "https://issuer.example.test"
+      key_material:
+        key_set_id: "hs256-static-1"
+    expected:
+      validation_result:
+        status: "rejected-expired"
+        reason_codes: ["expired"]
+
+  - id: "jwt-nbf-boundary-eq-now"
+    description: "A JWT whose nbf is exactly equal to the validation clock instant with zero leeway, treated as valid under the spec's fail-closed inequality."
+    inputs:
+      jwt_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsiZXhhbXBsZS1jbGllbnQiXSwiZXhwIjoxNzM1NzcyNDAwLCJpYXQiOjE3MzU2ODI0MDAsImlzcyI6Imh0dHBzOi8vaXNzdWVyLmV4YW1wbGUudGVzdCIsIm5iZiI6MTczNTY4NjAwMCwic3ViIjoidXNlci0xMjMifQ.0oj8RZccbhtTXRZUw2wg2bP84wLxxlrg0J-RMt22INQ"
+      validation_policy:
+        algorithms:
+          allowed: ["HS256"]
+        clock:
+          now_epoch_seconds: 1735686000
+          leeway_seconds: 0
+        expected_audience: ["example-client"]
+        expected_issuer: "https://issuer.example.test"
+      key_material:
+        key_set_id: "hs256-static-1"
+    expected:
+      validation_result:
+        status: "valid"
+        reason_codes: []
+
+  - id: "jwt-nbf-with-leeway"
+    description: "A JWT whose nbf is slightly in the future but is accepted because clock.leeway_seconds is large enough."
+    inputs:
+      jwt_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsiZXhhbXBsZS1jbGllbnQiXSwiZXhwIjoxNzM1NzcyNDAwLCJpYXQiOjE3MzU2ODI0MDAsImlzcyI6Imh0dHBzOi8vaXNzdWVyLmV4YW1wbGUudGVzdCIsIm5iZiI6MTczNTY4NjAzMCwic3ViIjoidXNlci0xMjMifQ.8zlL3ftnYPc2YZT3sFveOElWGW17GRF5jziwishsHgE"
+      validation_policy:
+        algorithms:
+          allowed: ["HS256"]
+        clock:
+          now_epoch_seconds: 1735686000
+          leeway_seconds: 60
+        expected_audience: ["example-client"]
+        expected_issuer: "https://issuer.example.test"
+      key_material:
+        key_set_id: "hs256-static-1"
+    expected:
+      validation_result:
+        status: "valid"
+        reason_codes: []
+
+  - id: "jwt-alg-none-disallowed"
+    description: "A JWT whose header requests alg=\"none\" while the validation policy does not allow the \"none\" algorithm, yielding a policy rejection."
+    inputs:
+      jwt_token: "eyJhbGciOiJub25lIiwidHlwIjoiSldUIn0.eyJhdWQiOlsiZXhhbXBsZS1jbGllbnQiXSwiZXhwIjoxNzM1NzcyNDAwLCJpYXQiOjE3MzU2ODI0MDAsImlzcyI6Imh0dHBzOi8vaXNzdWVyLmV4YW1wbGUudGVzdCIsInN1YiI6InVzZXItMTIzIn0."
+      validation_policy:
+        algorithms:
+          allowed: ["HS256"]
+        clock:
+          now_epoch_seconds: 1735686000
+          leeway_seconds: 0
+        expected_audience: ["example-client"]
+        expected_issuer: "https://issuer.example.test"
+      key_material:
+        key_set_id: "hs256-static-1"
+    expected:
+      validation_result:
+        status: "rejected-policy"
+        reason_codes: ["alg-none-disallowed"]
+
+  - id: "jwt-algorithm-not-allowed"
+    description: "A JWT that uses an algorithm not included in validation_policy.algorithms.allowed (ES256 vs HS256 allowlist), resulting in a policy rejection."
+    inputs:
+      jwt_token: "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsiZXhhbXBsZS1jbGllbnQiXSwiZXhwIjoxNzM1NzcyNDAwLCJpYXQiOjE3MzU2ODI0MDAsImlzcyI6Imh0dHBzOi8vaXNzdWVyLmV4YW1wbGUudGVzdCIsInN1YiI6InVzZXItMTIzIn0.jQ-6zdXzsAGO01Jj0g0aSD0ddql_qi3Wy25sbZvyTcI"
+      validation_policy:
+        algorithms:
+          allowed: ["HS256"]
+        clock:
+          now_epoch_seconds: 1735686000
+          leeway_seconds: 0
+        expected_audience: ["example-client"]
+        expected_issuer: "https://issuer.example.test"
+      key_material:
+        key_set_id: "hs256-static-1"
+    expected:
+      validation_result:
+        status: "rejected-policy"
+        reason_codes: ["algorithm-not-allowed"]
+
+  - id: "jwt-missing-required-sub"
+    description: "A JWT validated under a profile that requires sub, but the token omits sub, resulting in rejected-policy (profile-driven missing-required-claim)."
+    inputs:
+      jwt_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsiZXhhbXBsZS1jbGllbnQiXSwiY2xpZW50X2lkIjoiY2xpZW50LTEyMyIsImV4cCI6MTczNTc3MjQwMCwiaWF0IjoxNzM1NjgyNDAwLCJpc3MiOiJodHRwczovL2lzc3Vlci5leGFtcGxlLnRlc3QiLCJqdGkiOiJ0b2tlbi1taXNzaW5nLXN1Yi0xIn0.RZ6dNG4obPvcC3IOKhYHU863N44UOgLNsSjLB4Wx0vA"
+      validation_policy:
+        algorithms:
+          allowed: ["HS256"]
+        clock:
+          now_epoch_seconds: 1735686000
+          leeway_seconds: 0
+        expected_audience: ["example-client"]
+        expected_issuer: "https://issuer.example.test"
+        profile_id: "access-token-profile-A"
+      key_material:
+        key_set_id: "hs256-static-1"
+    expected:
+      validation_result:
+        status: "rejected-policy"
+        reason_codes: ["missing-required-claim"]
+
+  - id: "jwt-claim-type-mismatch-aud-string"
+    description: "A JWT whose aud claim is a string while the profile expects an array-of-string, resulting in a policy rejection (claim-type-mismatch)."
+    inputs:
+      jwt_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOiJleGFtcGxlLWNsaWVudCIsImNsaWVudF9pZCI6ImNsaWVudC0xMjMiLCJleHAiOjE3MzU3NzI0MDAsImlhdCI6MTczNTY4MjQwMCwiaXNzIjoiaHR0cHM6Ly9pc3N1ZXIuZXhhbXBsZS50ZXN0IiwianRpIjoidG9rZW4tYXVkLXN0cmluZy0xIiwic3ViIjoidXNlci0xMjMifQ.H4g8_ta5A2qr7-K2Tcc_WxjWFeM-OgvOeZPqkoeqw_U"
+      validation_policy:
+        algorithms:
+          allowed: ["HS256"]
+        clock:
+          now_epoch_seconds: 1735686000
+          leeway_seconds: 0
+        expected_audience: ["example-client"]
+        expected_issuer: "https://issuer.example.test"
+        profile_id: "access-token-profile-A"
+      key_material:
+        key_set_id: "hs256-static-1"
+    expected:
+      validation_result:
+        status: "rejected-policy"
+        reason_codes: ["claim-type-mismatch"]
+
+  - id: "jwt-claims-only-mode-indeterminate"
+    description: "A syntactically valid JWT processed via a claims-only extract_claims operation without full validation, returning indeterminate with decoded but unvalidated claims."
+    inputs:
+      operation: "extract_claims"
+      jwt_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsiZXhhbXBsZS1jbGllbnQiXSwiZXhwIjoxNzM1NzcyNDAwLCJpYXQiOjE3MzU2ODI0MDAsImlzcyI6Imh0dHBzOi8vaXNzdWVyLmV4YW1wbGUudGVzdCIsInN1YiI6InVzZXItMTIzIn0.pVcDLzYm44lBO-C6MxbUCnKsV000McKpgLu3oo5iDek"
+      validation_policy:
+        algorithms:
+          allowed: ["HS256"]
+        clock:
+          now_epoch_seconds: 1735686000
+          leeway_seconds: 0
+        expected_audience: ["example-client"]
+        expected_issuer: "https://issuer.example.test"
+        claims:
+          allow_on_failure: true
+      key_material:
+        key_set_id: "hs256-static-1"
+    expected:
+      validation_result:
+        status: "indeterminate"
+        reason_codes: ["claims-only-mode"]
+
+  - id: "jwt-valid-basic-claims-view-tags"
+    description: "A jwt-valid-basic-style token that additionally exercises claims_view tagging for core header fields and payload claims under successful validation."
+    inputs:
+      jwt_token: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdWQiOlsiZXhhbXBsZS1jbGllbnQiXSwiZXhwIjoxNzM1NzcyNDAwLCJpYXQiOjE3MzU2ODI0MDAsImlzcyI6Imh0dHBzOi8vaXNzdWVyLmV4YW1wbGUudGVzdCIsInN1YiI6InVzZXItMTIzIn0.pVcDLzYm44lBO-C6MxbUCnKsV000McKpgLu3oo5iDek"
+      validation_policy:
+        algorithms:
+          allowed: ["HS256"]
+        clock:
+          now_epoch_seconds: 1735686000
+          leeway_seconds: 0
+        expected_audience: ["example-client"]
+        expected_issuer: "https://issuer.example.test"
+      key_material:
+        key_set_id: "hs256-static-1"
+    expected:
+      validation_result:
+        status: "valid"
+        reason_codes: []
+      claims_view:
+        header:
+          alg:
+            validation_status: "validated"
+          typ:
+            validation_status: "validated"
+        claims:
+          iss:
+            validation_status: "validated"
+          sub:
+            validation_status: "validated"
+          aud:
+            validation_status: "validated"
+          exp:
+            validation_status: "validated"
+          iat:
+            validation_status: "validated"

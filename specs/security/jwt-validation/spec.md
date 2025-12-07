@@ -21,7 +21,12 @@ The normative sources for this spec unit are:
   profile or conformance bundles, JSON Schemas, or other machine-readable
   artifacts).
 - External standards (for example, RFCs, FIPS documents, or other specs)
-  referenced from `spec.yaml` or from those bundles.
+  referenced from `spec.yaml` or from those bundles. For this spec, they
+  include at least:
+  - RFC 7519 (JSON Web Token – JWT).
+  - RFC 7515 (JSON Web Signature – JWS).
+  - RFC 7517 (JSON Web Key – JWK).
+  - RFC 7518 (JSON Web Algorithms – JWA).
 
 Suggested reading order:
 
@@ -75,7 +80,16 @@ In later iterations, this spec is also intended to anchor:
   claims with or without full validation, subject to clearly documented risk
   and policy.
 
-Those aspects are tracked as open questions and may evolve across versions.
+For version `0.1.0`, all three facets—validation, claim extraction, and the
+conformance/audit harness—are intentionally defined under this single spec
+ID. Future versions MAY revise this arrangement (for example, by introducing
+a dedicated audit spec or profile), but such a change would be treated as a
+separate, explicit evolution of the spec rather than a silent restructuring.
+
+While there are unresolved medium- or high-impact topics for this spec unit,
+they are tracked in `open-questions.md` and may evolve across versions. Once
+a question is resolved, its outcome is captured in the normative artefacts
+and the corresponding row is removed from that file.
 
 ## Concepts
 
@@ -155,25 +169,29 @@ profile-specific binding.
 Normatively, implementations MUST map common failure categories to status
 values as follows (example `reason_codes` are RECOMMENDED but not exhaustive):
 
-- **Expired tokens** – when `exp` is in the past relative to the validation
+- **Expired tokens** – when `exp` is expired relative to the validation
   clock after applying any configured `clock.leeway_seconds`, implementations
   MUST use `rejected-expired` and SHOULD include a reason code such as
-  `expired`.
+  `expired`. Formally, a token is expired if
+  `now_epoch_seconds >= exp - leeway_seconds` when `exp` is required and present.
 - **Not-yet-valid tokens** – when `nbf`/`iat` checks indicate that the token
   is not yet valid (after leeway), implementations MUST use
   `rejected-not-yet-valid` and SHOULD include a reason code such as
-  `not-yet-valid`.
+  `not-yet-valid`. Formally, a token is not-yet-valid if
+  `now_epoch_seconds < nbf - leeway_seconds` when `nbf` is required and present.
 - **Signature or MAC failure** – when a signature or MAC does not verify
   under supported algorithms and available `key_material` (for example, wrong
   key or corrupted signature), implementations MUST use `rejected-signature`
   and SHOULD include a reason code such as `signature-verification-failed`.
 - **Audience mismatch** – when audience requirements derived from
-  `validation_policy` are not satisfied by the `aud` claim (for example,
-  missing an expected audience), implementations MUST use `rejected-audience`
-  and SHOULD include a reason code such as `audience-mismatch`.
-- **Issuer mismatch** – when issuer requirements are not satisfied by the
-  `iss` claim (for example, issuer not in an allowed set), implementations
-  MUST use `rejected-issuer` and SHOULD include a reason code such as
+  `validation_policy.expected_audience` are not satisfied by the `aud` claim
+  (for example, missing an expected audience), implementations MUST use
+  `rejected-audience` and SHOULD include a reason code such as
+  `audience-mismatch`.
+- **Issuer mismatch** – when issuer requirements derived from
+  `validation_policy.expected_issuer` are not satisfied by the `iss` claim
+  (for example, issuer not in an allowed set), implementations MUST use
+  `rejected-issuer` and SHOULD include a reason code such as
   `issuer-mismatch`.
 - **Policy violations** – when tokens violate structural or semantic policy
   requirements (for example, missing required claims, claim type mismatches,
@@ -194,7 +212,8 @@ values as follows (example `reason_codes` are RECOMMENDED but not exhaustive):
   `key_material` or policy are insufficient to decide), implementations MUST
   use `indeterminate` and SHOULD include reason codes that describe the
   source of uncertainty (such as `kid-not-found`, `kid-ambiguous`, or
-  `claims-only-mode`).
+  `claims-only-mode`). Callers MUST treat `indeterminate` as non-valid for
+  authorization decisions; it is never equivalent to `valid`.
 
 ### Key material and kid handling
 
@@ -240,6 +259,15 @@ opinionated key source requirements MAY be introduced by environment- or
 ecosystem-specific profiles and bindings, but they build on top of this
 baseline rather than replacing it with a purely abstract key_material handle.
 
+For conformance and test harnesses, this spec defines a canonical binding:
+
+- Conformance vectors reference key sets via a `key_set_id`.
+- Each referenced key set is defined as a static JWK set (for example,
+  `static_jwks.keys` in `conformance-vectors.yaml`) using standard JOSE JWK
+  fields such as `kty`, `kid`, `alg`, and `k` for symmetric keys.
+Implementations or adapters map this static representation into their
+internal `key_material` structures when running conformance plans.
+
 ### Claims model – `claims_view`
 
 Claim extraction and introspection use a `claims_view` object. It provides a
@@ -250,6 +278,8 @@ decoded view over header and payload together with validation tags:
   - `value` – decoded value of the header field.
   - `validation_status` – one of `validated`, `partially_validated`,
     `unvalidated`.
+  - `checked` – optional boolean flag indicating whether any validation
+    checks were executed for this field.
   - `reason_codes` – optional list of reason codes explaining why a field is
     not fully validated.
 - `claims` – decoded payload claims keyed by claim name. Each claim follows
@@ -257,8 +287,33 @@ decoded view over header and payload together with validation tags:
   - `value` – decoded value (string, number, boolean, array, or object).
   - `validation_status` – one of `validated`, `partially_validated`,
     `unvalidated`.
+  - `checked` – optional boolean flag indicating whether any validation
+    checks were executed for this claim.
   - `reason_codes` – optional list of reason codes for non-validated or
     partially validated claims.
+
+Semantics of `validation_status`:
+
+- `validated` – all mandatory checks for this field or claim have been
+  performed and passed under the current `validation_policy`, profiles, and
+  `key_material`.
+- `partially_validated` – some checks ran and passed but others did not run
+  or remain inconclusive (for example, a profile covers only part of the
+  claim’s semantics, or full validation was skipped in a claims-only mode).
+- `unvalidated` – no checks were performed for this field or claim or checks
+  failed.
+
+When `validation_status != validated`, implementations MUST either:
+
+- provide a non-empty `reason_codes` list that explains why the field or
+  claim is not fully validated; or
+- use a binding/profile-level mechanism (for example, an explicit `checked`
+  flag set to false) to document that the field or claim was deliberately
+  left unvalidated.
+
+This is intended to make it easier for callers and conformance tooling to
+distinguish between \"never checked\" and \"checked but failed or remained
+inconclusive\" cases.
 
 The spec does not prescribe any particular set of claim names or token types.
 Instead, callers express requirements through `validation_policy` and any
@@ -275,11 +330,20 @@ external profiles or templates they define. Typical usage includes:
 Normatively, this spec only names a small, generic set of optional keys under
 `validation_policy`:
 
-- `algorithms` – may describe which algorithm identifiers are acceptable for
-  a given validation call (for example, via `algorithms.allowed`).
-- `clock` – carries time-related parameters such as `clock.leeway_seconds`
-  for skew-tolerant checks. Clock skew for validation MUST be configured
-  through this field rather than through separate global parameters.
+- `algorithms` – describes which algorithm identifiers are acceptable for a
+  given validation call via `algorithms.allowed`. Identifiers MUST be JOSE
+  `alg` names (for example, `HS256`, `RS256`) and callers SHOULD pin a small,
+  explicit set. If no allowed algorithms are provided (and no profile
+  supplies them), or if requested algorithms are incompatible with the
+  selected key type, validators MUST fail with `rejected-policy`, not
+  `indeterminate`.
+- `clock` – carries time-related parameters such as
+  `clock.now_epoch_seconds` (the reference time for checks) and
+  `clock.leeway_seconds` for skew-tolerant checks. Time-based behaviour is
+  defined in terms of these values.
+- `expected_audience` / `expected_issuer` – express audience and issuer
+  expectations for this invocation. Audience and issuer mismatch mappings
+  derive from these fields.
 - `profile_id` / `profile_refs` – may reference external claim profiles or
   bundles defined by the consumer.
 
@@ -470,11 +534,15 @@ example: “Conformant to `sdd.security.jwt.validation@0.1.0`, class
 
 ## Examples and Walkthroughs (optional)
 
-`examples/vectors.yaml` contains illustrative vectors that exercise the
-result model and conformance classes. For example:
+`conformance-vectors.yaml` contains normative conformance vectors that
+exercise the result model and conformance classes. For example:
 
 - `jwt-valid-basic` – a structurally valid, correctly signed JWT that
   satisfies a simple policy and yields `validation_result.status: valid`.
+- `jwt-valid-basic-claims-view-tags` – extends the basic-valid scenario by
+  additionally asserting `claims_view` tagging for core header fields and
+  payload claims (for example, `alg`, `typ`, `iss`, `sub`, `aud`, `exp`,
+  `iat` all tagged as `validated`) under successful validation.
 - `jwt-expired` – a correctly signed JWT that fails due to an `exp` in the
   past and yields `validation_result.status: rejected-expired`.
 - `jwt-invalid-signature` – a structurally valid JWT whose signature or MAC
@@ -491,7 +559,9 @@ result model and conformance classes. For example:
   omitted or emptied on failure, even though the token is still available to
   the implementation for local logging.
 
-These vectors are schematic: they show representative header and claim
-structures and use placeholder base64url segments for compact
-representations. Implementations and test suites may derive concrete tokens
-from these shapes to exercise real parsers and cryptographic verification.
+Unlike earlier schematic examples, the conformance vectors in
+`conformance-vectors.yaml` use concrete compact JWT strings signed with
+static test keys and an explicit `clock.now_epoch_seconds`. Conformance
+plans in `conformance.yaml` are defined in terms of these concrete vectors so
+that independent implementations can run the same tests and compare
+behaviour deterministically.

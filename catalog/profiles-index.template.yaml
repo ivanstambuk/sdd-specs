@@ -7,4 +7,8 @@ profiles:
     path: "specs/<category>/<project-or-domain>/<spec-directory>/profiles/<profile-file>.yaml"
     language: "PLACEHOLDER_LANGUAGE"
     status: "<draft|stable|deprecated>"
-
+  - profile_id: "access-token-profile-A"
+    spec: "sdd.security.jwt.validation@0.1.0"
+    path: "specs/security/jwt-validation/profiles/access-token-profile-A.yaml"
+    language: "jwt"
+    status: "draft"

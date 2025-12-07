@@ -12,6 +12,9 @@ origin:
   type: "other-standard"
   refs:
     - "https://datatracker.ietf.org/doc/rfc7519/"
+    - "https://datatracker.ietf.org/doc/rfc7515/"
+    - "https://datatracker.ietf.org/doc/rfc7517/"
+    - "https://datatracker.ietf.org/doc/rfc7518/"
   notes: "Defines an implementation-neutral contract for validating JSON Web Tokens (JWTs) against policy and keys."
 
 lifecycle:
@@ -22,6 +25,7 @@ lifecycle:
 
 normative_bundles:
   conformance: "./conformance.yaml"
+  conformance_vectors: "./conformance-vectors.yaml"
 
 dependencies:
   requires: []
@@ -33,10 +37,11 @@ abstractions:
       type: "string"
       constraints:
         format: "compact-serialization"
+        description: "REQUIRED input. Compact JWT string in JWS compact serialization. This field MUST always be present for validate_jwt and extract_claims operations."
     - name: "validation_policy"
       type: "object"
       constraints:
-        description: "Structured policy describing required claims, allowed algorithms, clock/leeway parameters, and claim-return behavior on validation failure. Callers typically define claim profiles (for example, sets of required claims, shapes, and value constraints) outside this spec and reference them from this object."
+        description: "REQUIRED input object describing required claims, allowed algorithms, clock/leeway parameters, and claim-return behavior on validation failure. This field MUST always be present for validate_jwt and extract_claims operations, though it MAY be an empty object when only default behaviour under local profiles or defaults is desired. Callers typically define claim profiles (for example, sets of required claims, shapes, and value constraints) outside this spec and reference them from this object."
         fields:
           algorithms:
             type: "object"
@@ -45,11 +50,14 @@ abstractions:
               allowed:
                 type: "array"
                 items_type: "string"
-                description: "List of algorithm identifiers that are acceptable for this validation invocation (for example, \"HS256\", \"RS256\"). Interpretation of algorithm names is implementation-defined."
+                description: "List of algorithm identifiers that are acceptable for this validation invocation (for example, \"HS256\", \"RS256\"). Algorithm identifiers MUST use JOSE alg names for JWS/JWT (case-sensitive); implementations MAY support additional aliases only via documented profiles or bindings."
           clock:
             type: "object"
             description: "Optional clock-related parameters."
             fields:
+              now_epoch_seconds:
+                type: "integer"
+                description: "Unix epoch seconds representing the validation clock instant to use for time-based checks such as exp, nbf, and iat. When present, this value MUST be used as the reference time for all time comparisons in this validation invocation."
               leeway_seconds:
                 type: "integer"
                 description: "Clock skew leeway in seconds to apply to time-based checks such as exp and nbf."
@@ -60,6 +68,13 @@ abstractions:
               allow_on_failure:
                 type: "boolean"
                 description: "When true, implementations MAY return a populated claims_view on validation failure, with all fields tagged as unvalidated or partially_validated. When false or absent, implementations MUST omit or empty claims_view on validation failure, except for narrow diagnostic allowances defined elsewhere in this spec or in profiles. In all cases, any claims_view returned on validation failure is intended solely for diagnostic or informational use and MUST NOT be treated as providing validated inputs for security decisions."
+          expected_audience:
+            type: "array"
+            items_type: "string"
+            description: "Optional expected audience values (for example, client IDs) to compare against the aud claim. When present, aud MUST satisfy these requirements or validation_result.status MUST be rejected-audience."
+          expected_issuer:
+            type: "string"
+            description: "Optional expected issuer identifier (for example, an HTTPS URL). When present, iss MUST satisfy this requirement or validation_result.status MUST be rejected-issuer."
           profile_id:
             type: "string"
             description: "Optional identifier of a single external claim profile or bundle that defines required claims and constraints."
@@ -74,7 +89,7 @@ abstractions:
     - name: "key_material"
       type: "object"
       constraints:
-        description: "Keyset or key-resolution handle used to verify JWT signatures or MACs."
+        description: "Keyset or key-resolution handle used to verify JWT signatures or MACs. For operations that accept key_material as an input (such as validate_jwt and run_conformance_audit), an effective key_material value is REQUIRED; see notes for how bindings may satisfy this requirement via configuration rather than an explicit argument."
         notes:
           - "Implementations MUST support key_material that represents multiple verification keys (for example, a set of keys with associated identifiers, algorithms, or usage constraints)."
           - "When the JWT header contains a kid value, implementations MUST attempt key selection based on that kid in combination with any applicable algorithm or usage constraints in key_material."
@@ -83,19 +98,32 @@ abstractions:
           - "When a specific key has been selected and a verification attempt is made with that key, a failing verification MUST be reported as rejected-signature, not indeterminate."
           - "Implementations MUST support at least one key source type for populating or resolving key_material from: (a) static or in-memory keysets configured locally; (b) HTTPS JWKS endpoints; or (c) JWKS resolution via OIDC metadata. They MAY support more than one such source type, and for each supported source type they MUST support multiple configured instances."
           - "This requirement to support at least one concrete key source type is a deliberate part of the base spec’s scope, rather than treating key_material as a purely abstract handle. Environment- or ecosystem-specific profiles MAY impose stricter requirements or introduce additional key source types without weakening this baseline."
+        notes:
+          - "For the conceptual validate_jwt operation, key_material is REQUIRED: a call that does not supply keys cannot be treated as a normal validation invocation. In bindings that support default key sources, this requirement may be satisfied via configuration rather than an explicit argument, but conformance adapters MUST surface an effective key_material value."
+        structure:
+          static_jwks:
+            type: "object"
+            description: "Canonical representation of a static JWK set used in conformance vectors and test harnesses."
+            fields:
+              keys:
+                type: "array"
+                items_type: "object"
+                description: "JWK objects for verification keys, typically using JOSE JWK conventions."
+        notes:
+          - "Conformance vectors for this spec use key_material that references a static_jwks-based key set via key_set_id, with concrete JWK values defined in the conformance-vectors.yaml bundle."
     - name: "conformance_plan"
       type: "object"
       constraints:
-        description: "Optional description of which vectors, scenarios, and expected outcomes to exercise in conformance/audit mode."
+        description: "Optional description of which vectors, scenarios, and expected outcomes to exercise in conformance/audit mode. This input is OPTIONAL and MAY be omitted entirely when the conformance harness defines the plan out-of-band. When present, it MUST be a JSON object (never null)."
   outputs:
     - name: "validation_result"
       type: "object"
       constraints:
-        description: "Structured result indicating success or failure, reasons, and a summary of the effective policy applied."
+        description: "Structured result indicating success or failure, reasons, and a summary of the effective policy applied. This object is REQUIRED whenever validate_jwt or extract_claims completes."
         fields:
           status:
             type: "string"
-            description: "Primary outcome of validation."
+            description: "Primary outcome of validation. This field is REQUIRED and MUST always be present."
             allowed_values:
               - "valid"
               - "rejected-expired"
@@ -109,7 +137,7 @@ abstractions:
           reason_codes:
             type: "array"
             items_type: "string"
-            description: "Zero or more machine-readable reason codes (for example, \"expired\", \"audience-mismatch\"). MAY contain multiple entries when several checks fail."
+            description: "Zero or more machine-readable reason codes (for example, \"expired\", \"audience-mismatch\"). MAY contain multiple entries when several checks fail. This field is OPTIONAL; when present but no specific reasons are known, it MAY be an empty array. It MUST NOT be null."
           message:
             type: "string"
             description: "Optional human-readable explanation of the outcome. Not intended for programmatic branching."
@@ -120,50 +148,60 @@ abstractions:
             type: "string"
             description: "Optional compact JWT representation consisting only of the header and payload segments (`<base64url(header)>.<base64url(payload)>`), without any signature or MAC segment. Suitable for logging or diagnostics; MUST NOT be used as an authorization artefact. MAY be returned when the applicable validation_policy.claims.allow_on_failure setting permits returning claims on failure or in claims-only/conformance modes."
         notes:
-          - "Implementations MUST map common failure categories to validation_result.status values as follows. The example reason_codes strings shown are RECOMMENDED for convergence but not exhaustive or mandatory; implementations MAY use additional or different reason_codes as long as status mapping and overall semantics remain consistent with this spec."
+          - "Implementations MUST map common failure categories to validation_result.status values as follows. The example reason_codes strings shown are RECOMMENDED for convergence but not exhaustive or mandatory for general use; implementations MAY use additional or different reason_codes as long as status mapping and overall semantics remain consistent with this spec. For implementations claiming the jwt-validator-audit conformance class, a small core vocabulary of reason_codes is REQUIRED when reporting expected/observed outcomes in audit_report (for example, \"expired\", \"not-yet-valid\", \"audience-mismatch\", \"issuer-mismatch\", \"signature-verification-failed\", \"kid-not-found\", \"kid-ambiguous\", \"algorithm-not-allowed\", \"alg-none-disallowed\", \"missing-required-claim\", \"claim-type-mismatch\", \"claims-only-mode\")."
           - "Tokens that are expired relative to the validation clock and any configured clock.leeway_seconds MUST yield status \"rejected-expired\" and SHOULD include a reason_code such as \"expired\"."
-          - "Tokens that are not yet valid according to nbf/iat checks (after applying clock.leeway_seconds) MUST yield status \"rejected-not-yet-valid\" and SHOULD include a reason_code such as \"not-yet-valid\"."
+          - "Tokens that are not yet valid according to nbf/iat checks (after applying clock.leeway_seconds) MUST yield status \"rejected-not-yet-valid\" and SHOULD include a reason_code such as \"not-yet-valid\". Formally, a token is not-yet-valid if now_epoch_seconds < nbf - leeway_seconds for the applicable nbf value."
           - "Tokens whose signature or MAC fails to verify under supported algorithms and available key_material (for example, wrong key, corrupted signature) MUST yield status \"rejected-signature\" and SHOULD include a reason_code such as \"signature-verification-failed\"."
           - "Tokens whose audience requirements are not satisfied by the aud claim (for example, based on validation_policy.expected_audience) MUST yield status \"rejected-audience\" and SHOULD include a reason_code such as \"audience-mismatch\"."
-          - "Tokens whose issuer requirements are not satisfied by the iss claim (for example, issuer not in an allowed set) MUST yield status \"rejected-issuer\" and SHOULD include a reason_code such as \"issuer-mismatch\"."
+          - "Tokens whose issuer requirements are not satisfied by the iss claim (for example, issuer not in an allowed set per validation_policy.expected_issuer) MUST yield status \"rejected-issuer\" and SHOULD include a reason_code such as \"issuer-mismatch\"."
           - "Tokens that violate structural or semantic policy requirements (for example, missing required claims, type mismatches, forbidden alg \"none\", unsupported algorithms per policy, invalid or conflicting profiles, invalid time relationships, or invalid clock configuration) MUST yield status \"rejected-policy\" and SHOULD include reason_codes that reflect the specific policy violation (for example, \"missing-required-claim\", \"claim-type-mismatch\", \"alg-none-disallowed\", \"algorithm-not-allowed\", \"invalid-profile\", \"invalid-clock-config\")."
           - "Tokens that are syntactically malformed in their compact representation (for example, wrong number of segments, invalid base64url, non-JSON payload, or invalid UTF-8 where required) MUST yield status \"rejected-malformed\"."
-          - "Tokens processed in modes or environments where the implementation cannot conclusively determine success or failure under policy (for example, missing or ambiguous keys such as kid-not-found or kid-ambiguous, claims-only mode without full validation, or other cases where key_material or policy are insufficient to decide) MUST yield status \"indeterminate\" and SHOULD include reason_codes that describe the source of uncertainty (for example, \"kid-not-found\", \"kid-ambiguous\", \"claims-only-mode\")."
+          - "Tokens processed in modes or environments where the implementation cannot conclusively determine success or failure under policy (for example, missing or ambiguous keys such as kid-not-found or kid-ambiguous, claims-only mode without full validation, or other cases where key_material or policy are insufficient to decide) MUST yield status \"indeterminate\" and SHOULD include reason_codes that describe the source of uncertainty (for example, \"kid-not-found\", \"kid-ambiguous\", \"claims-only-mode\"). Callers MUST treat indeterminate as non-valid for authorization decisions."
+          - "Aside from status, all other fields in validation_result (reason_codes, message, applied_policy, raw_without_signature) are OPTIONAL and MAY be omitted when not applicable. Omitted fields and empty arrays/objects MUST be treated equivalently by consumers; null values MUST NOT be used in place of omission."
     - name: "claims_view"
       type: "object"
       constraints:
-        description: "Decoded header and claims together with metadata indicating whether they are fully validated, partially validated, or unvalidated."
+        description: "Decoded header and claims together with metadata indicating whether they are fully validated, partially validated, or unvalidated. This output is OPTIONAL at the top level and MAY be omitted or empty in cases described under the validate_jwt and extract_claims operations. When present, claims_view MUST be a JSON object (never null) containing header and claims mappings as described below."
         structure:
           header:
             type: "object"
-            description: "Decoded JWT header fields keyed by header name."
+            description: "Decoded JWT header fields keyed by header name. When no header fields are available or returned, this object MAY be an empty mapping; it MUST NOT be null."
             additional_properties:
               type: "object"
               fields:
                 value:
-                  description: "Decoded value of the header field."
+                  description: "Decoded value of the header field. This field is REQUIRED for each header entry."
                 validation_status:
-                  description: "Validation status for this header field."
+                  description: "Validation status for this header field. This field is REQUIRED for each header entry. A value of \"validated\" means all mandatory checks for this field have been performed and passed under the current validation_policy and key_material. \"Partially_validated\" means some checks ran and passed but others did not run or remain inconclusive. \"Unvalidated\" means no checks were performed for this field or checks failed."
                   allowed_values: ["validated", "partially_validated", "unvalidated"]
+                checked:
+                  description: "Optional boolean flag indicating whether at least one validation check was executed for this header field. When set to false, the field is explicitly marked as unvalidated by construction."
+                  type: "boolean"
                 reason_codes:
-                  description: "Optional list of reason codes explaining why a header field is not fully validated."
+                  description: "Optional list of reason codes explaining why a header field is not fully validated. When validation_status is not \"validated\" and checked is not explicitly false, implementations MUST either provide a non-empty reason_codes list or use profile/binding-level mechanisms to document why the field is not fully validated."
           claims:
             type: "object"
-            description: "Decoded JWT payload claims keyed by claim name."
+            description: "Decoded JWT payload claims keyed by claim name. When no payload claims are available or returned, this object MAY be an empty mapping; it MUST NOT be null."
             additional_properties:
               type: "object"
               fields:
                 value:
-                  description: "Decoded value of the claim (for example, string, number, boolean, array, or object)."
+                  description: "Decoded value of the claim (for example, string, number, boolean, array, or object). This field is REQUIRED for each claim entry."
                 validation_status:
-                  description: "Validation status for this claim."
+                  description: "Validation status for this claim. This field is REQUIRED for each claim entry. A value of \"validated\" means all mandatory checks for this claim have been performed and passed under the current validation_policy, profiles, and key_material. \"Partially_validated\" means some checks ran and passed but others did not run or remain inconclusive. \"Unvalidated\" means no checks were performed for this claim or checks failed."
                   allowed_values: ["validated", "partially_validated", "unvalidated"]
+                checked:
+                  description: "Optional boolean flag indicating whether at least one validation check was executed for this claim. When set to false, the claim is explicitly marked as unvalidated by construction."
+                  type: "boolean"
                 reason_codes:
-                  description: "Optional list of reason codes explaining why a claim is not fully validated."
+                  description: "Optional list of reason codes explaining why a claim is not fully validated. When validation_status is not \"validated\" and checked is not explicitly false, implementations MUST either provide a non-empty reason_codes list or use profile/binding-level mechanisms to document why the claim is not fully validated."
+        notes:
+          - "When validation fails and validation_policy.claims.allow_on_failure is false or absent, claims_view MUST either be omitted entirely from the operation result or present as an object whose header and claims mappings are both empty. Implementations MUST NOT populate claims_view with decoded values in this case, even as unvalidated."
+          - "When validation succeeds, callers SHOULD expect claims_view to be present with header and claims entries tagged as validated wherever applicable. Fields that are not returned or not known to the implementation SHOULD simply be absent from the claims or header mappings, not set to null."
     - name: "audit_report"
       type: "object"
       constraints:
-        description: "Summary of how an implementation behaved across a conformance or drift-detection run, suitable for human and automated review."
+        description: "Summary of how an implementation behaved across a conformance or drift-detection run, suitable for human and automated review. This output is REQUIRED for successful run_conformance_audit operations."
         fields:
           implementation:
             type: "object"
@@ -171,16 +209,16 @@ abstractions:
             fields:
               id:
                 type: "string"
-                description: "Implementation identifier (for example, library name or service ID)."
+                description: "Implementation identifier (for example, library name or service ID). This field is REQUIRED."
               version:
                 type: "string"
-                description: "Implementation version string."
+                description: "Implementation version string. This field is REQUIRED."
           spec_version:
             type: "string"
-            description: "Spec version that the implementation claims to conform to (for example, \"sdd.security.jwt.validation@0.1.0\")."
+            description: "Spec version that the implementation claims to conform to (for example, \"sdd.security.jwt.validation@0.1.0\"). This field is REQUIRED."
           plan_id:
             type: "string"
-            description: "Identifier of the conformance plan or vector set used for this run."
+            description: "Identifier of the conformance plan or vector set used for this run. This field is REQUIRED."
           summary:
             type: "object"
             description: "High-level summary of the conformance run."
@@ -188,40 +226,45 @@ abstractions:
               status:
                 type: "string"
                 allowed_values: ["pass", "fail", "indeterminate"]
-                description: "Overall outcome of the run."
+                description: "Overall outcome of the run. This field is REQUIRED."
               vector_counts:
                 type: "object"
-                description: "Aggregate counts for vectors in the plan."
+                description: "Aggregate counts for vectors in the plan. This object is REQUIRED and its fields MUST reflect the counts computed from the vectors array."
                 fields:
                   total:
                     type: "integer"
+                    description: "Total number of vectors in the conformance plan. REQUIRED."
                   passed:
                     type: "integer"
+                    description: "Number of vectors whose observed outcome matched the expected outcome. REQUIRED."
                   failed:
                     type: "integer"
+                    description: "Number of vectors whose observed outcome did not match the expected outcome. REQUIRED."
                   indeterminate:
                     type: "integer"
+                    description: "Number of vectors whose observed outcome was indeterminate. REQUIRED (0 if none)."
                   drift_detected:
                     type: "integer"
+                    description: "Number of vectors whose outcome indicated behavioural drift. REQUIRED (0 if none)."
           vectors:
             type: "array"
-            description: "Per-vector results for the conformance or drift-detection run."
+            description: "Per-vector results for the conformance or drift-detection run. This array is REQUIRED but MAY be empty if no vectors were executed."
             items:
               type: "object"
               fields:
                 id:
                   type: "string"
-                  description: "Identifier of the vector or scenario (for example, an ID from examples/vectors.yaml or a conformance bundle)."
+                  description: "Identifier of the vector or scenario (for example, an ID from a conformance bundle). This field is REQUIRED for each vector entry."
                 status:
                   type: "string"
                   allowed_values: ["pass", "fail", "indeterminate", "drift"]
-                  description: "Outcome for this vector."
+                  description: "Outcome for this vector. This field is REQUIRED for each vector entry."
                 expected:
                   type: "object"
-                  description: "Expected high-level outcome (for example, expected validation_result.status and key reason codes)."
+                  description: "Expected high-level outcome (for example, expected validation_result.status and key reason codes). This field is REQUIRED for each vector entry."
                 observed:
                   type: "object"
-                  description: "Observed high-level outcome from the implementation under test."
+                  description: "Observed high-level outcome from the implementation under test. This field is REQUIRED for each vector entry."
                 notes:
                   type: "string"
                   description: "Optional human-readable notes describing discrepancies or environment details."
@@ -298,6 +341,6 @@ non_functional:
     - "Validation cost is typically dominated by JSON parsing, base64url decoding, and cryptographic signature or MAC verification."
 
 examples:
-  test_vectors_file: "./examples/vectors.yaml"
+  test_vectors_file: "./conformance-vectors.yaml"
   walkthroughs:
     - "spec.md#examples-and-walkthroughs"

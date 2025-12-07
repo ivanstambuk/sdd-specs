@@ -1,6 +1,7 @@
 metadata:
   spec: "sdd.security.jwt.validation@0.1.0"
   description: "Conformance classes and plans for JWT Validation."
+  vectors_bundle: "./conformance-vectors.yaml"
 
 conformance_classes:
   - id: "jwt-validator-core"
@@ -37,36 +38,66 @@ conformance_classes:
 
 plans:
   - id: "basic-core-validation"
-    description: "Core validation scenarios using examples/vectors.yaml."
+    description: "Core validation scenarios using the normative conformance-vectors.yaml bundle."
     targets:
       classes: ["jwt-validator-core"]
     vectors:
       - "jwt-valid-basic"
       - "jwt-expired"
+      - "jwt-not-yet-valid"
+      - "jwt-exp-boundary-eq-now"
+      - "jwt-nbf-boundary-eq-now"
+      - "jwt-nbf-with-leeway"
       - "jwt-invalid-signature"
       - "jwt-wrong-audience"
-      - "jwt-not-yet-valid"
+      - "jwt-wrong-issuer"
       - "jwt-malformed"
+      - "jwt-alg-none-disallowed"
+      - "jwt-algorithm-not-allowed"
+      - "jwt-kid-not-found"
+      - "jwt-kid-ambiguous"
+      - "jwt-missing-required-sub"
+      - "jwt-claim-type-mismatch-aud-string"
 
   - id: "claims-and-failure-modes"
-    description: "Scenarios exercising claims_view tagging and policy-driven allow_on_failure behavior."
+    description: "Scenarios exercising claims_view tagging and policy-driven allow_on_failure behavior using the normative vectors bundle."
     targets:
       classes: ["jwt-validator-claims"]
     vectors:
       - "jwt-valid-basic"
+      - "jwt-valid-basic-claims-view-tags"
       - "jwt-expired"
       - "jwt-wrong-audience"
       - "jwt-claims-on-failure-allowed"
       - "jwt-claims-on-failure-disallowed"
+      - "jwt-missing-required-sub"
+      - "jwt-claim-type-mismatch-aud-string"
+      - "jwt-claims-only-mode-indeterminate"
 
   - id: "drift-detection-sanity"
-    description: "Illustrative plan for exercising run_conformance_audit and audit_report."
+    description: "Illustrative plan for exercising run_conformance_audit and audit_report using the normative vectors bundle."
+    targets:
+      classes: ["jwt-validator-audit"]
+    vectors:
+      - "jwt-valid-basic"
+      - "jwt-expired"
+      - "jwt-exp-boundary-eq-now"
+      - "jwt-nbf-boundary-eq-now"
+      - "jwt-nbf-with-leeway"
+      - "jwt-invalid-signature"
+      - "jwt-wrong-audience"
+      - "jwt-wrong-issuer"
+      - "jwt-malformed"
+      - "jwt-alg-none-disallowed"
+      - "jwt-algorithm-not-allowed"
+      - "jwt-kid-not-found"
+      - "jwt-kid-ambiguous"
+
+  - id: "audit-smoke-test"
+    description: "Minimal audit-focused plan that checks audit_report summary and per-vector results for consistency with validation outcomes."
     targets:
       classes: ["jwt-validator-audit"]
     vectors:
       - "jwt-valid-basic"
       - "jwt-expired"
       - "jwt-invalid-signature"
-      - "jwt-wrong-audience"
-      - "jwt-not-yet-valid"
-      - "jwt-malformed"

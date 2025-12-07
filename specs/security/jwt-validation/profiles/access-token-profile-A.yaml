@@ -1,0 +1,69 @@
+spec: "sdd.security.jwt.validation@0.1.0"
+profile_id: "access-token-profile-A"
+title: "JWT Access Token Profile A (RFC 9068-aligned)"
+status: "draft"
+
+target:
+  language: "jwt"
+
+description: >
+  Minimal JWT access token profile aligned with RFC 9068. This profile
+  captures the required claim set and basic type expectations for access
+  tokens that are intended to be validated via sdd.security.jwt.validation.
+  It is intentionally narrow and generic; deployment-specific profiles are
+  expected to refine or extend these constraints.
+
+claims:
+  required:
+    iss:
+      type: "string"
+      description: >
+        Issuer identifier for the authorization server, as in RFC 7519
+        and RFC 9068. Typically an HTTPS URL. MUST be present.
+    sub:
+      type: "string"
+      description: >
+        Subject identifier. For end-user grants, this usually identifies
+        the resource owner; for client-credentials-style grants, it may
+        identify the client application. MUST be present.
+    aud:
+      type: "array-of-string"
+      description: >
+        Audience indicator(s) for the resource server(s) that this access
+        token is intended for. The array MUST contain at least one entry.
+        Resource servers are expected to validate that at least one value
+        matches their own resource indicator.
+    exp:
+      type: "numeric-date"
+      description: >
+        Expiration time as a NumericDate (seconds since epoch). MUST be
+        present and is interpreted relative to validation_policy.clock.now_epoch_seconds.
+    iat:
+      type: "numeric-date"
+      description: >
+        Issued-at time as a NumericDate (seconds since epoch). MUST be
+        present.
+    client_id:
+      type: "string"
+      description: >
+        OAuth 2.0 client identifier for the client to which this access
+        token was issued, as in RFC 8693 and RFC 9068. MUST be present.
+    jti:
+      type: "string"
+      description: >
+        Token identifier used to uniquely identify this JWT access token
+        instance. MUST be present.
+
+  optional:
+    scope:
+      type: "string"
+      description: >
+        Space-separated list of OAuth 2.0 scope strings associated with
+        this access token, as in RFC 8693 and RFC 9068. When present, all
+        scope values SHOULD have meaning for at least one audience listed
+        in the aud claim.
+
+notes:
+  - "This profile does not define authorization semantics for individual scope values or audiences; those remain deployment-specific."
+  - "Implementations MAY define additional local profiles that refine this claim set (for example, by constraining scope values or adding custom claims) and reference them via validation_policy.profile_id or validation_policy.profile_refs."
+
