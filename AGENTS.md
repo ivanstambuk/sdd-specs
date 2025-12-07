@@ -92,41 +92,51 @@ The goal for any AI agent working here is to:
 
 - For any non-trivial change to specs, bundles, profiles, schemas, or docs in
   this repo, the agent MUST follow a **two-phase interaction**:
-  - **Phase 1 – Clarifications (questions only).**
+  - **Phase 1 – Clarifications (per-question options).**
     1. Restate the task briefly to confirm understanding.
-    2. Ask numbered clarification questions (1., 2., 3.) and wait for the
-       human’s answers; do not propose options, solutions, or implementation
-       plans in this message, **except when reasonable options with pros/cons
-       and a clear recommendation can already be presented.**
+    2. Ask numbered clarification questions (1., 2., 3.), and for **each**
+       clarification present 2–4 concrete options labelled **A, B, C, …** with
+       short pros/cons and an explicit recommendation of one option; wait for
+       the human to pick or refine an option before proceeding.
+       - These options are **local to that clarification point** (for example,
+         “Scope of behavior – Option A/B/C”), not global “overall design”
+         proposals.
     3. For design/architecture topics, record at least one `Q-xxx` entry in the
        relevant spec unit’s `open-questions.md` before asking those questions;
        when that question is resolved and its outcome is captured in the spec’s
        normative artefacts (`spec.yaml`, supporting bundles, and/or normative
        sections in `spec.md`), remove the corresponding row from
        `open-questions.md` as part of the same slice of work.
-  - **Phase 2 – Options & decision.**
-    4. After the human has answered the clarification questions (when any are
-       needed), present 2–4 options labelled A, B, C, … with short pros/cons,
-       and explicitly ask the human to choose or refine.
-    5. Only after the human confirms a choice may the agent draft or modify
-       specs, profiles, bundles, schemas, or docs, and it MUST mention the
-       relevant `Q-xxx` ID in its chat summary for that change (do not embed
-       `Q-xxx` IDs in normative specs/docs; see the Clarification Gate above).
+    4. During Phase 1 the agent MUST **not** propose high-level, holistic
+       “Option A/B/C” designs that combine multiple unresolved clarifications;
+       those belong only in Phase 2 once the individual questions have answers.
+  - **Phase 2 – High-level options & decision.**
+    5. After the human has answered the Phase 1 clarification questions (or
+       explicitly deferred some), present 2–4 high-level options labelled
+       **A, B, C, …** that synthesize the agreed clarifications into concrete
+       spec changes, with short pros/cons, and explicitly ask the human to
+       choose or refine.
+    6. Only after the human confirms a high-level choice may the agent draft or
+       modify specs, profiles, bundles, schemas, or docs, and it MUST mention
+       the relevant `Q-xxx` ID in its chat summary for that change (do not
+       embed `Q-xxx` IDs in normative specs/docs; see the Clarification Gate
+       above).
 
 ### Owner preference – options-first for design
 
 - For medium/high-impact design/spec questions (spec structure, bundle
   composition, profile definitions, schema changes, cross-cutting conventions,
   etc.), the default preference for this repository’s maintainer is:
-  - The agent SHOULD present 2–4 concrete options with pros/cons and a clear
-    recommendation for each decision point, instead of sending a
-    “questions-only” message when reasonable options are already apparent.
-  - The agent MAY still ask short clarifying questions, but should avoid a
-    separate “Phase 1 – questions only” message unless a blocking ambiguity
-    makes options meaningless.
-  - This options-first behaviour is a standing explicit override for design
-    work in this repo and does not need to be restated by the human in each
-    session.
+  - In **Phase 1**, the agent SHOULD phrase each substantive clarification as
+    per-question options A/B/C with pros/cons **and a clear recommendation of
+    one option**, instead of open-ended “what do you want?” prompts.
+  - In **Phase 2**, once clarifications are answered, the agent SHOULD present
+    2–4 high-level options A/B/C that combine those decisions into coherent
+    spec edits, again with pros/cons and an explicit recommendation of one
+    option.
+  - The agent MUST avoid proposing Phase‑2‑style “overall” options before the
+    corresponding Phase‑1 clarifications have been answered or explicitly
+    deferred by the human.
 - **Low-impact/self-serve changes.** Trivial, obviously mechanical edits
   (typos, purely local renames, formatting-only fixes) may be performed
   directly after restating the task, without a full two-phase exchange, unless
@@ -163,6 +173,7 @@ The goal for any AI agent working here is to:
 - When the human says “session handover” (or “handoff”), treat it as a request to prepare a high-signal summary for the next assistant or future session.
 - Use the template in `ReadMe.LLM` section “Session Handover / Handoff Template”: fill in as many bracketed fields as you can from repo context (specs, bundles, catalogs, open-questions files, recent changes, and git state).
 - The response SHOULD be copy/paste‑ready for the next assistant and SHOULD highlight environment, current status, recent increments, pending scope, git state, and concrete next steps in this repo.
+- When replying to a direct “session handover” (or “handoff”) request from the human, wrap the **entire** handover text in a single fenced code block (for example, starting with ```text) so it can be copied and pasted as-is into a follow-up session.
 
 ## Exhaustive Execution for Scoped Tasks
 
@@ -212,6 +223,14 @@ The goal for any AI agent working here is to:
 
 - When asked to “create a new spec”:
   - Work from the template in `specs/_template-spec-unit/`.
+  - During the **initial scaffold**, keep clarifications **minimal**: only ask
+    for what is required to produce a valid `spec.yaml` and directory path
+    (for example: spec ID/domain/path and `kind`), using per-question A/B/C
+    options with pros/cons and a recommendation.
+  - Defer deeper design questions (behaviour, profiles, bundles, algorithms,
+    etc.) until **after** the scaffold exists; record them as `Q-xxx` entries
+    in that spec unit’s `open-questions.md` and resolve them in follow-up
+    edits.
   - Ensure new files respect schemas in `schemas/` and indices in `catalog/`.
 - When asked to “improve” or “refactor”:
   - Focus on clarity, consistency, and schema alignment.

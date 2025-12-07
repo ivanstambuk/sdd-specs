@@ -1,0 +1,72 @@
+metadata:
+  spec: "sdd.security.jwt.validation@0.1.0"
+  description: "Conformance classes and plans for JWT Validation."
+
+conformance_classes:
+  - id: "jwt-validator-core"
+    description: "Implements validate_jwt with the core validation_result model and basic policy handling."
+    requires:
+      operations:
+        - "validate_jwt"
+      behaviors:
+        - "Return validation_result.status and reason_codes in accordance with spec.yaml."
+        - "Respect clock-based requirements in validation_policy (for example, exp and nbf)."
+        - "Treat syntactically malformed jwt_token inputs as in-scope and reject them with validation_result.status \"rejected-malformed\" and an omitted or empty claims_view."
+        - "Support multi-key key_material and handle header.kid in accordance with spec.yaml, mapping kid-not-found and kid-ambiguous cases to validation_result.status \"indeterminate\" with appropriate reason_codes."
+
+  - id: "jwt-validator-claims"
+    description: "Adds extract_claims semantics and claim-level tagging to the core validator."
+    requires:
+      operations:
+        - "validate_jwt"
+        - "extract_claims"
+      behaviors:
+        - "Populate claims_view.header and claims_view.claims with decoded fields."
+        - "Tag each claim with validation_status in {validated, partially_validated, unvalidated}."
+        - "Honor validation_policy.claims.allow_on_failure when deciding whether to return claims_view on validation failure."
+
+  - id: "jwt-validator-audit"
+    description: "Supports conformance and drift-detection runs with structured audit_report output."
+    requires:
+      operations:
+        - "run_conformance_audit"
+      behaviors:
+        - "Accept a conformance_plan that references known vector IDs."
+        - "Produce audit_report with implementation, spec_version, plan_id, summary, vectors, and optional drift_indicators."
+        - "Ensure audit_report is reproducible for the same implementation version, plan, and key_material."
+
+plans:
+  - id: "basic-core-validation"
+    description: "Core validation scenarios using examples/vectors.yaml."
+    targets:
+      classes: ["jwt-validator-core"]
+    vectors:
+      - "jwt-valid-basic"
+      - "jwt-expired"
+      - "jwt-invalid-signature"
+      - "jwt-wrong-audience"
+      - "jwt-not-yet-valid"
+      - "jwt-malformed"
+
+  - id: "claims-and-failure-modes"
+    description: "Scenarios exercising claims_view tagging and policy-driven allow_on_failure behavior."
+    targets:
+      classes: ["jwt-validator-claims"]
+    vectors:
+      - "jwt-valid-basic"
+      - "jwt-expired"
+      - "jwt-wrong-audience"
+      - "jwt-claims-on-failure-allowed"
+      - "jwt-claims-on-failure-disallowed"
+
+  - id: "drift-detection-sanity"
+    description: "Illustrative plan for exercising run_conformance_audit and audit_report."
+    targets:
+      classes: ["jwt-validator-audit"]
+    vectors:
+      - "jwt-valid-basic"
+      - "jwt-expired"
+      - "jwt-invalid-signature"
+      - "jwt-wrong-audience"
+      - "jwt-not-yet-valid"
+      - "jwt-malformed"

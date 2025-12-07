@@ -26,3 +26,13 @@ specs:
       - "password-breach-check"
       - "HTTP"
 
+  - id: "sdd.security.jwt.validation"
+    version: "0.1.0"
+    path: "specs/security/jwt-validation"
+    status: "draft"
+    domain: "security"
+    origin: "other-standard"
+    tags:
+      - "JWT"
+      - "tokens"
+      - "validation"

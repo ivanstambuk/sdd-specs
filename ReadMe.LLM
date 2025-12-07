@@ -41,7 +41,7 @@ Compact orientation for AI and spec-writing assistants in this repository.
 
 ## 7. Session Handover / Handoff Template
 
-When the human asks for a “session handover” (or “handoff”), prepare a copy/paste‑ready prompt for the next assistant using this template and fill in as many brackets as you can from repo context:
+When the human asks for a “session handover” (or “handoff”), prepare a copy/paste‑ready prompt for the next assistant using this template and fill in as many brackets as you can from repo context. The reply to the human MUST wrap the entire handover text in a single fenced code block (for example, ```text … ```), so it can be pasted into a new session unchanged.
 
 ```
 You’re resuming work on [spec/bundle/catalog identifier or short workstream name]. Core context:
